@@ -1,0 +1,14 @@
+/target/
+**/target/
+*.log
+*.err.log
+webhook_raw.log
+webhook_prod.log
+webhook_prod.err.log
+bot_app.log
+bot_app.err.log
+.env
+.env.*
+/data/
+**/data/
+*.exe

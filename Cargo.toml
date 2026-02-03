@@ -1,0 +1,29 @@
+[package]
+name = "qqbot_sdk"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+description = "QQ bot SDK (webhook-first)"
+
+[dependencies]
+async-trait = "0.1"
+axum = { version = "0.7", features = ["macros"] }
+base64 = "0.22"
+bytes = "1"
+ed25519-dalek = "2"
+futures = "0.3"
+hex = "0.4"
+http = "1"
+reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "signal"] }
+tracing = "0.1"
+
+[dev-dependencies]
+tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
+
+[workspace]
+members = ["bot_app"]
