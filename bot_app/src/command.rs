@@ -23,7 +23,8 @@ pub fn parse_command(prefix: &str, content: &str) -> Option<Command> {
         "help" => Some(Command::Help),
         "get" => {
             let key = parts.get(1).map(|v| v.to_string());
-            key.map(|k| Command::Get { key: k }).or(Some(Command::Unknown))
+            key.map(|k| Command::Get { key: k })
+                .or(Some(Command::Unknown))
         }
         "set" => {
             if parts.len() < 3 {

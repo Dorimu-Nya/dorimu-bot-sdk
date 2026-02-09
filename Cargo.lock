@@ -1016,6 +1016,7 @@ dependencies = [
  "futures",
  "hex",
  "http",
+ "percent-encoding",
  "reqwest",
  "serde",
  "serde_json",

@@ -45,10 +45,15 @@ async fn main() {
 ## Signature verification
 
 ```rust
-use qqbot_sdk::{SignatureConfig, SignatureVerifier};
+use qqbot_sdk::{ReplayProtectionMode, SignatureConfig, SignatureVerifier};
+use std::time::Duration;
 
 let public_key = vec![0u8; 32]; // replace with your bot public key bytes
-let verifier = SignatureVerifier::new(SignatureConfig::new(public_key))?;
+let verifier = SignatureVerifier::new(
+    SignatureConfig::new(public_key)
+        // rollout-friendly default is Monitor; switch to Enforce after observing logs
+        .with_replay_protection(ReplayProtectionMode::Monitor, Duration::from_secs(10 * 60)),
+)?;
 ```
 
 Or derive it from Bot Secret:
@@ -62,10 +67,12 @@ let verifier = SignatureVerifier::from_bot_secret("your_bot_secret")?;
 Attach it to `WebhookConfig`:
 
 ```rust
-use qqbot_sdk::WebhookConfig;
+use qqbot_sdk::{SignatureVerificationMode, WebhookConfig};
 
 let config = WebhookConfig {
     signature: Some(verifier),
+    // Monitor => log only; Enforce => block invalid signatures.
+    signature_verification: SignatureVerificationMode::Monitor,
     ..Default::default()
 };
 ```
@@ -74,8 +81,18 @@ Defaults:
 - Signature header: `x-signature-ed25519`
 - Timestamp header: `x-signature-timestamp`
 - Encoding: auto (hex first, then base64)
+- Replay protection: monitor mode, 10-minute skew window
+
+Webhook defaults:
+- Signature verification mode: `Monitor`
+- Error body is sanitized by default (`expose_error_details = false`)
 
 Override if your environment differs.
+
+Recommended production rollout:
+1. Start with `SignatureVerificationMode::Monitor` + replay protection monitor.
+2. Observe logs and ensure clock sync (NTP).
+3. Switch to `SignatureVerificationMode::Enforce` and optionally `ReplayProtectionMode::Enforce`.
 
 ## OpenAPI client scaffold
 

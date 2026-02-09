@@ -2,8 +2,9 @@ use async_trait::async_trait;
 use axum::{routing::get, Router};
 use qqbot_sdk::{
     event_name_field, webhook_validation_hook, EventContext, EventData, EventResponse, EventRouter,
-    HttpTokenProvider, Middleware, Next, OpenApi, OpenApiClient, OpenApiConfig, OpenApiPaths, RawLogger,
-    SignatureVerifier, TokenManager, WebhookApp, WebhookConfig,
+    HttpTokenProvider, Middleware, Next, OpenApi, OpenApiClient, OpenApiConfig, OpenApiPaths,
+    RawLogger, ReplayProtectionMode, SignatureConfig, SignatureVerificationMode, SignatureVerifier,
+    TokenManager, WebhookApp, WebhookConfig,
 };
 use serde_json::json;
 use std::{
@@ -140,7 +141,12 @@ async fn main() {
 
     let config = Config::from_env();
 
-    let verifier = SignatureVerifier::from_bot_secret(&config.bot_secret).expect("invalid bot secret");
+    let verifier = SignatureVerifier::new(
+        SignatureConfig::from_bot_secret(&config.bot_secret)
+            .expect("invalid bot secret")
+            .with_replay_protection(ReplayProtectionMode::Monitor, Duration::from_secs(10 * 60)),
+    )
+    .expect("invalid bot secret");
     let hook = webhook_validation_hook(&config.bot_secret);
     let debug_webhook = env::var("QQ_WEBHOOK_DEBUG")
         .map(|v| matches!(v.as_str(), "1" | "true" | "TRUE" | "yes" | "YES"))
@@ -149,7 +155,8 @@ async fn main() {
         .ok()
         .and_then(|v| v.parse::<usize>().ok())
         .unwrap_or(2048);
-    let debug_log_path = env::var("QQ_WEBHOOK_DEBUG_LOG").unwrap_or_else(|_| "webhook_raw.log".to_string());
+    let debug_log_path =
+        env::var("QQ_WEBHOOK_DEBUG_LOG").unwrap_or_else(|_| "webhook_raw.log".to_string());
     let raw_logger: Option<RawLogger> = if debug_webhook {
         let debug_log_path = debug_log_path.clone();
         Some(Arc::new(move |headers: &http::HeaderMap, body: &[u8]| {
@@ -179,7 +186,8 @@ async fn main() {
         None
     };
 
-    let token_provider = HttpTokenProvider::from_env_or_official(&config.app_id, &config.client_secret);
+    let token_provider =
+        HttpTokenProvider::from_env_or_official(&config.app_id, &config.client_secret);
     let token_manager = TokenManager::new(token_provider, Duration::from_secs(120));
     let client = OpenApiClient::new(token_manager, OpenApiConfig::from_env_or_official());
     let api = Arc::new(OpenApi::new(client, OpenApiPaths::official_defaults()));
@@ -260,6 +268,7 @@ async fn main() {
         WebhookConfig {
             path: config.webhook_path.clone(),
             signature: Some(verifier),
+            signature_verification: SignatureVerificationMode::Monitor,
             hook: Some(hook),
             raw_logger,
             event_name_extractor: event_name_field("t"),
@@ -268,9 +277,7 @@ async fn main() {
     )
     .into_router();
 
-    let app = Router::new()
-        .route("/healthz", get(healthz))
-        .merge(webhook);
+    let app = Router::new().route("/healthz", get(healthz)).merge(webhook);
 
     let addr: SocketAddr = format!("{}:{}", config.host, config.port).parse().unwrap();
     tracing::info!(%addr, "listening");

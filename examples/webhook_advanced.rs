@@ -2,7 +2,8 @@ use async_trait::async_trait;
 use qqbot_sdk::{
     event_name_field, webhook_validation_hook, EventContext, EventData, EventResponse, EventRouter,
     HttpTokenProvider, Middleware, Next, OpenApi, OpenApiClient, OpenApiConfig, OpenApiPaths,
-    SignatureVerifier, TokenManager, WebhookApp, WebhookConfig,
+    ReplayProtectionMode, SignatureConfig, SignatureVerificationMode, SignatureVerifier,
+    TokenManager, WebhookApp, WebhookConfig,
 };
 use serde_json::json;
 use std::{
@@ -98,7 +99,12 @@ async fn main() {
     let app_id = env::var("QQ_APP_ID").expect("QQ_APP_ID missing");
     let client_secret = env::var("QQ_CLIENT_SECRET").expect("QQ_CLIENT_SECRET missing");
 
-    let verifier = SignatureVerifier::from_bot_secret(&bot_secret).expect("invalid bot secret");
+    let verifier = SignatureVerifier::new(
+        SignatureConfig::from_bot_secret(&bot_secret)
+            .expect("invalid bot secret")
+            .with_replay_protection(ReplayProtectionMode::Monitor, Duration::from_secs(10 * 60)),
+    )
+    .expect("invalid bot secret");
     let hook = webhook_validation_hook(&bot_secret);
 
     let token_provider = HttpTokenProvider::from_env_or_official(app_id, client_secret);
@@ -180,6 +186,7 @@ async fn main() {
     let config = WebhookConfig {
         path: "/webhook".to_string(),
         signature: Some(verifier),
+        signature_verification: SignatureVerificationMode::Monitor,
         hook: Some(hook),
         event_name_extractor: event_name_field("t"),
         ..Default::default()

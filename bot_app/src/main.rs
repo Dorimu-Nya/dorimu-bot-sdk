@@ -8,7 +8,8 @@ use axum::{routing::get, Router};
 use qqbot_sdk::{
     event_name_field, webhook_validation_hook, EventContext, EventData, EventResponse, EventRouter,
     HttpTokenProvider, Middleware, Next, OpenApi, OpenApiClient, OpenApiConfig, OpenApiPaths,
-    SignatureVerifier, TokenManager, WebhookApp, WebhookConfig,
+    ReplayProtectionMode, SignatureConfig, SignatureVerificationMode, SignatureVerifier,
+    TokenManager, WebhookApp, WebhookConfig,
 };
 use serde_json::json;
 use std::{
@@ -106,10 +107,16 @@ async fn main() {
     let store = Arc::new(KvStore::load(&config.data_path).await);
     let deduper = Deduper::from_env();
 
-    let verifier = SignatureVerifier::from_bot_secret(&config.bot_secret).expect("invalid bot secret");
+    let verifier = SignatureVerifier::new(
+        SignatureConfig::from_bot_secret(&config.bot_secret)
+            .expect("invalid bot secret")
+            .with_replay_protection(ReplayProtectionMode::Monitor, Duration::from_secs(10 * 60)),
+    )
+    .expect("invalid bot secret");
     let hook = webhook_validation_hook(&config.bot_secret);
 
-    let token_provider = HttpTokenProvider::from_env_or_official(&config.app_id, &config.client_secret);
+    let token_provider =
+        HttpTokenProvider::from_env_or_official(&config.app_id, &config.client_secret);
     let token_manager = TokenManager::new(token_provider, Duration::from_secs(120));
     let client = OpenApiClient::new(token_manager, OpenApiConfig::from_env_or_official());
     let api = Arc::new(OpenApi::new(client, OpenApiPaths::official_defaults()));
@@ -148,7 +155,8 @@ async fn main() {
                             return Ok(EventResponse::ok());
                         }
 
-                        let command = parse_command(&cmd_prefix, content).unwrap_or(Command::Unknown);
+                        let command =
+                            parse_command(&cmd_prefix, content).unwrap_or(Command::Unknown);
                         let reply = handle_command(command, &cmd_prefix, &store).await;
                         if let Some(reply) = reply {
                             let body = json!({
@@ -157,7 +165,11 @@ async fn main() {
                                 "msg_type": 0,
                                 "content": reply,
                             });
-                            match api.c2c_messages().send(&msg.author.user_openid, &body).await {
+                            match api
+                                .c2c_messages()
+                                .send(&msg.author.user_openid, &body)
+                                .await
+                            {
                                 Ok((status, resp)) => {
                                     tracing::info!(?status, ?resp, "c2c reply sent");
                                 }
@@ -178,6 +190,7 @@ async fn main() {
         WebhookConfig {
             path: config.webhook_path.clone(),
             signature: Some(verifier),
+            signature_verification: SignatureVerificationMode::Monitor,
             hook: Some(hook),
             event_name_extractor: event_name_field("t"),
             ..Default::default()
@@ -185,9 +198,7 @@ async fn main() {
     )
     .into_router();
 
-    let app = Router::new()
-        .route("/healthz", get(healthz))
-        .merge(webhook);
+    let app = Router::new().route("/healthz", get(healthz)).merge(webhook);
 
     let addr: SocketAddr = format!("{}:{}", config.host, config.port).parse().unwrap();
     tracing::info!(%addr, "listening");

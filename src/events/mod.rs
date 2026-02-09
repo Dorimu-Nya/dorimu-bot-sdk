@@ -17,10 +17,11 @@ mod validation;
 pub use audio::AudioOrLiveChannelMemberEvent;
 pub use common::{Attachment, Member, User};
 pub use forum::{
-    AtGuildInfo, AtInfo, AtRoleInfo, AtUserInfo, ChannelInfo, EmojiInfo, Elem, ForumAuditResult, ForumPostEvent,
-    ForumPostInfo, ForumReplyEvent, ForumReplyInfo, ForumThreadEvent, ForumThreadInfo, ImageElem, OpenForumEvent,
-    Paragraph, ParagraphProps, PlatImage, PlatVideo, RichObject, RichText, RichTextValue, TextElem, TextInfo,
-    TextProps, UrlElem, UrlInfo, VideoElem,
+    AtGuildInfo, AtInfo, AtRoleInfo, AtUserInfo, ChannelInfo, Elem, EmojiInfo, ForumAuditResult,
+    ForumPostEvent, ForumPostInfo, ForumReplyEvent, ForumReplyInfo, ForumThreadEvent,
+    ForumThreadInfo, ImageElem, OpenForumEvent, Paragraph, ParagraphProps, PlatImage, PlatVideo,
+    RichObject, RichText, RichTextValue, TextElem, TextInfo, TextProps, UrlElem, UrlInfo,
+    VideoElem,
 };
 pub use group::{GroupAddRobotEvent, GroupDelRobotEvent, GroupMsgRejectEvent};
 pub use guild::{ChannelEvent, GuildEvent};
@@ -125,6 +126,7 @@ impl EventType {
         }
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(value: &str) -> Self {
         match value {
             "C2C_MESSAGE_CREATE" => EventType::C2cMessageCreate,
@@ -245,7 +247,8 @@ pub enum EventData {
 
 impl TypedEvent {
     pub fn from_value(payload: &Value) -> Result<Self> {
-        let gateway: GatewayPayload<Value> = serde_json::from_value(payload.clone()).map_err(Error::Json)?;
+        let gateway: GatewayPayload<Value> =
+            serde_json::from_value(payload.clone()).map_err(Error::Json)?;
         let event_type = gateway.t.clone().ok_or(Error::EventNameNotFound)?;
         let data = match &event_type {
             EventType::C2cMessageCreate => EventData::C2cMessage(parse_data(&gateway.d)?),
@@ -266,9 +269,9 @@ impl TypedEvent {
             EventType::ChannelCreate | EventType::ChannelUpdate | EventType::ChannelDelete => {
                 EventData::ChannelEvent(parse_data(&gateway.d)?)
             }
-            EventType::GuildMemberAdd | EventType::GuildMemberUpdate | EventType::GuildMemberRemove => {
-                EventData::GuildMemberEvent(parse_data(&gateway.d)?)
-            }
+            EventType::GuildMemberAdd
+            | EventType::GuildMemberUpdate
+            | EventType::GuildMemberRemove => EventData::GuildMemberEvent(parse_data(&gateway.d)?),
             EventType::AudioOrLiveChannelMemberEnter => {
                 EventData::AudioOrLiveChannelMemberEnter(parse_data(&gateway.d)?)
             }
@@ -276,16 +279,22 @@ impl TypedEvent {
                 EventData::AudioOrLiveChannelMemberExit(parse_data(&gateway.d)?)
             }
             EventType::MessageReactionAdd => EventData::MessageReactionAdd(parse_data(&gateway.d)?),
-            EventType::MessageReactionRemove => EventData::MessageReactionRemove(parse_data(&gateway.d)?),
-            EventType::InteractionCreate => EventData::InteractionCreate(parse_data(&gateway.d)?),
-            EventType::ForumThreadCreate | EventType::ForumThreadUpdate | EventType::ForumThreadDelete => {
-                EventData::ForumThreadEvent(parse_data(&gateway.d)?)
+            EventType::MessageReactionRemove => {
+                EventData::MessageReactionRemove(parse_data(&gateway.d)?)
             }
-            EventType::ForumPostCreate | EventType::ForumPostDelete => EventData::ForumPostEvent(parse_data(&gateway.d)?),
+            EventType::InteractionCreate => EventData::InteractionCreate(parse_data(&gateway.d)?),
+            EventType::ForumThreadCreate
+            | EventType::ForumThreadUpdate
+            | EventType::ForumThreadDelete => EventData::ForumThreadEvent(parse_data(&gateway.d)?),
+            EventType::ForumPostCreate | EventType::ForumPostDelete => {
+                EventData::ForumPostEvent(parse_data(&gateway.d)?)
+            }
             EventType::ForumReplyCreate | EventType::ForumReplyDelete => {
                 EventData::ForumReplyEvent(parse_data(&gateway.d)?)
             }
-            EventType::ForumPublishAuditResult => EventData::ForumAuditResult(parse_data(&gateway.d)?),
+            EventType::ForumPublishAuditResult => {
+                EventData::ForumAuditResult(parse_data(&gateway.d)?)
+            }
             EventType::OpenForumThreadCreate
             | EventType::OpenForumThreadUpdate
             | EventType::OpenForumThreadDelete

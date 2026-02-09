@@ -91,7 +91,12 @@ fn parse_interaction_event() {
     match event.data {
         EventData::InteractionCreate(interaction) => {
             assert_eq!(interaction.id, "interaction_id_1");
-            assert_eq!(interaction.data.and_then(|d| d.resolved.and_then(|r| r.button_data)), Some("btn_1".to_string()));
+            assert_eq!(
+                interaction
+                    .data
+                    .and_then(|d| d.resolved.and_then(|r| r.button_data)),
+                Some("btn_1".to_string())
+            );
         }
         other => panic!("unexpected event data: {other:?}"),
     }
@@ -118,7 +123,10 @@ fn parse_guild_member_event() {
         EventData::GuildMemberEvent(member_event) => {
             assert_eq!(member_event.member.guild_id.as_deref(), Some("guild_1"));
             assert_eq!(member_event.op_user_id.as_deref(), Some("op_1"));
-            assert_eq!(member_event.member.user.and_then(|u| u.id), Some("user_1".to_string()));
+            assert_eq!(
+                member_event.member.user.and_then(|u| u.id),
+                Some("user_1".to_string())
+            );
         }
         other => panic!("unexpected event data: {other:?}"),
     }
@@ -146,7 +154,10 @@ fn parse_forum_thread_event() {
 
     match event.data {
         EventData::ForumThreadEvent(thread_event) => {
-            assert_eq!(thread_event.thread_info.thread_id.as_deref(), Some("thread_1"));
+            assert_eq!(
+                thread_event.thread_info.thread_id.as_deref(),
+                Some("thread_1")
+            );
             match thread_event.thread_info.title {
                 Some(qqbot_sdk::RichTextValue::Plain(ref title)) => assert_eq!(title, "Hello"),
                 other => panic!("unexpected title: {other:?}"),

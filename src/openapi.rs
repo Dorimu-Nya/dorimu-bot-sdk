@@ -1,14 +1,18 @@
 use crate::{Error, HttpClient, Result, RetryPolicy};
 use async_trait::async_trait;
 use http::header::HeaderName;
+use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use reqwest::{Method, Response};
 use serde::de::DeserializeOwned;
 use serde_json::{json, Value};
-use std::{sync::Arc, time::{Duration, SystemTime}};
+use std::{
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
 
 const OFFICIAL_API_BASE_URL: &str = "https://api.sgroup.qq.com";
 const OFFICIAL_TOKEN_URL: &str = "https://bots.qq.com/app/getAppAccessToken";
-use tokio::sync::RwLock;
+use tokio::sync::{Mutex, RwLock};
 
 #[derive(Debug, Clone)]
 pub struct AccessToken {
@@ -25,6 +29,8 @@ pub trait TokenProvider: Send + Sync {
 pub struct TokenManager<P> {
     provider: P,
     cache: Arc<RwLock<Option<AccessToken>>>,
+    // 仅用于串行化刷新流程，避免 token 过期瞬间触发并发刷新风暴。
+    refresh_lock: Arc<Mutex<()>>,
     refresh_margin: Duration,
 }
 
@@ -36,6 +42,7 @@ where
         Self {
             provider,
             cache: Arc::new(RwLock::new(None)),
+            refresh_lock: Arc::new(Mutex::new(())),
             refresh_margin,
         }
     }
@@ -43,6 +50,18 @@ where
     pub async fn get_token(&self) -> Result<String> {
         let now = SystemTime::now();
         {
+            let guard = self.cache.read().await;
+            if let Some(token) = guard.as_ref() {
+                if token.expires_at > now + self.refresh_margin {
+                    return Ok(token.token.clone());
+                }
+            }
+        }
+
+        // 首轮读取未命中后，进入单飞锁。
+        let _refresh_guard = self.refresh_lock.lock().await;
+        {
+            // 双重检查：等待锁期间可能已有其他协程刷新成功。
             let guard = self.cache.read().await;
             if let Some(token) = guard.as_ref() {
                 if token.expires_at > now + self.refresh_margin {
@@ -73,21 +92,11 @@ impl Default for AuthConfig {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct OpenApiConfig {
     pub base_url: String,
     pub auth: AuthConfig,
     pub retry: RetryPolicy,
-}
-
-impl Default for OpenApiConfig {
-    fn default() -> Self {
-        Self {
-            base_url: String::new(),
-            auth: AuthConfig::default(),
-            retry: RetryPolicy::default(),
-        }
-    }
 }
 
 impl OpenApiConfig {
@@ -133,7 +142,12 @@ where
         }
     }
 
-    pub async fn request_json(&self, method: Method, path: &str, body: Option<&Value>) -> Result<Response> {
+    pub async fn request_json(
+        &self,
+        method: Method,
+        path: &str,
+        body: Option<&Value>,
+    ) -> Result<Response> {
         let token = self.token_manager.get_token().await?;
         let url = join_url(&self.config.base_url, path);
         let mut builder = self.http.client().request(method, url);
@@ -151,7 +165,12 @@ where
         self.http.send_with_retry(builder).await
     }
 
-    pub async fn request_value(&self, method: Method, path: &str, body: Option<&Value>) -> Result<(http::StatusCode, Value)> {
+    pub async fn request_value(
+        &self,
+        method: Method,
+        path: &str,
+        body: Option<&Value>,
+    ) -> Result<(http::StatusCode, Value)> {
         let resp = self.request_json(method, path, body).await?;
         let status = resp.status();
         let json = resp.json().await.map_err(Error::Http)?;
@@ -185,18 +204,21 @@ pub struct HttpTokenProvider {
     token_url: String,
     app_id: String,
     client_secret: String,
-    body_builder: Arc<dyn Fn(&str, &str) -> Value + Send + Sync>,
+    body_builder: TokenBodyBuilder,
     token_pointer: String,
     expires_in_pointer: Option<String>,
     default_ttl: Duration,
 }
 
+type TokenBodyBuilder = Arc<dyn Fn(&str, &str) -> Value + Send + Sync>;
+
 impl HttpTokenProvider {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         token_url: impl Into<String>,
         app_id: impl Into<String>,
         client_secret: impl Into<String>,
-        body_builder: Arc<dyn Fn(&str, &str) -> Value + Send + Sync>,
+        body_builder: TokenBodyBuilder,
         token_pointer: impl Into<String>,
         expires_in_pointer: Option<String>,
         default_ttl: Duration,
@@ -228,7 +250,9 @@ impl HttpTokenProvider {
             token_url,
             app_id,
             client_secret,
-            Arc::new(|app_id, client_secret| json!({ "appId": app_id, "clientSecret": client_secret })),
+            Arc::new(
+                |app_id, client_secret| json!({ "appId": app_id, "clientSecret": client_secret }),
+            ),
             "/access_token",
             Some("/expires_in".to_string()),
             Duration::from_secs(7200),
@@ -236,7 +260,10 @@ impl HttpTokenProvider {
         )
     }
 
-    pub fn from_env_or_official(app_id: impl Into<String>, client_secret: impl Into<String>) -> Self {
+    pub fn from_env_or_official(
+        app_id: impl Into<String>,
+        client_secret: impl Into<String>,
+    ) -> Self {
         let token_url = std::env::var("QQ_TOKEN_URL")
             .ok()
             .filter(|v| !v.trim().is_empty())
@@ -251,6 +278,20 @@ impl TokenProvider for HttpTokenProvider {
         let body = (self.body_builder)(&self.app_id, &self.client_secret);
         let builder = self.http.client().post(&self.token_url).json(&body);
         let resp = self.http.send_with_retry(builder).await?;
+        let status = resp.status();
+        if !status.is_success() {
+            // 非 2xx 明确返回 Token 错误，避免误把错误体当成 token 响应解析。
+            let body = resp.text().await.unwrap_or_default();
+            let mut preview = body;
+            if preview.len() > 512 {
+                preview.truncate(512);
+            }
+            return Err(Error::Token(format!(
+                "token endpoint returned status {}: {}",
+                status.as_u16(),
+                preview
+            )));
+        }
         let json: Value = resp.json().await.map_err(Error::Http)?;
 
         let token = json
@@ -333,20 +374,38 @@ impl OpenApiPaths {
             member_get: Some("/guilds/{guild_id}/members/{user_id}".to_string()),
             member_delete: Some("/guilds/{guild_id}/members/{user_id}".to_string()),
             role_members_list: Some("/guilds/{guild_id}/roles/{role_id}/members".to_string()),
-            role_member_add: Some("/guilds/{guild_id}/members/{user_id}/roles/{role_id}".to_string()),
-            role_member_delete: Some("/guilds/{guild_id}/members/{user_id}/roles/{role_id}".to_string()),
+            role_member_add: Some(
+                "/guilds/{guild_id}/members/{user_id}/roles/{role_id}".to_string(),
+            ),
+            role_member_delete: Some(
+                "/guilds/{guild_id}/members/{user_id}/roles/{role_id}".to_string(),
+            ),
             interaction_put: Some("/interactions/{interaction_id}".to_string()),
-            reaction_add: Some("/channels/{channel_id}/messages/{message_id}/reactions/{type}/{id}".to_string()),
-            reaction_delete: Some("/channels/{channel_id}/messages/{message_id}/reactions/{type}/{id}".to_string()),
-            reaction_users: Some("/channels/{channel_id}/messages/{message_id}/reactions/{type}/{id}".to_string()),
+            reaction_add: Some(
+                "/channels/{channel_id}/messages/{message_id}/reactions/{type}/{id}".to_string(),
+            ),
+            reaction_delete: Some(
+                "/channels/{channel_id}/messages/{message_id}/reactions/{type}/{id}".to_string(),
+            ),
+            reaction_users: Some(
+                "/channels/{channel_id}/messages/{message_id}/reactions/{type}/{id}".to_string(),
+            ),
             announces_create: Some("/guilds/{guild_id}/announces".to_string()),
             announces_delete: Some("/guilds/{guild_id}/announces/{message_id}".to_string()),
             api_permissions_list: Some("/guilds/{guild_id}/api_permission".to_string()),
             api_permissions_create: Some("/guilds/{guild_id}/api_permission/demand".to_string()),
-            channel_permissions_get_user: Some("/channels/{channel_id}/members/{user_id}/permissions".to_string()),
-            channel_permissions_set_user: Some("/channels/{channel_id}/members/{user_id}/permissions".to_string()),
-            channel_permissions_get_role: Some("/channels/{channel_id}/roles/{role_id}/permissions".to_string()),
-            channel_permissions_set_role: Some("/channels/{channel_id}/roles/{role_id}/permissions".to_string()),
+            channel_permissions_get_user: Some(
+                "/channels/{channel_id}/members/{user_id}/permissions".to_string(),
+            ),
+            channel_permissions_set_user: Some(
+                "/channels/{channel_id}/members/{user_id}/permissions".to_string(),
+            ),
+            channel_permissions_get_role: Some(
+                "/channels/{channel_id}/roles/{role_id}/permissions".to_string(),
+            ),
+            channel_permissions_set_role: Some(
+                "/channels/{channel_id}/roles/{role_id}/permissions".to_string(),
+            ),
             pins_list: Some("/channels/{channel_id}/pins".to_string()),
             pins_add: Some("/channels/{channel_id}/pins/{message_id}".to_string()),
             pins_delete: Some("/channels/{channel_id}/pins/{message_id}".to_string()),
@@ -587,7 +646,10 @@ where
     pub async fn delete(&self, guild_id: &str, user_id: &str) -> Result<http::StatusCode> {
         let template = require_path(&self.paths.member_delete, "member_delete")?;
         let path = render_path(&template, &[("guild_id", guild_id), ("user_id", user_id)])?;
-        let resp = self.client.request_json(Method::DELETE, &path, None).await?;
+        let resp = self
+            .client
+            .request_json(Method::DELETE, &path, None)
+            .await?;
         Ok(resp.status())
     }
 }
@@ -606,7 +668,10 @@ where
         let template = require_path(&self.paths.interaction_put, "interaction_put")?;
         let path = render_path(&template, &[("interaction_id", interaction_id)])?;
         let body = json!({ "code": code });
-        let resp = self.client.request_json(Method::PUT, &path, Some(&body)).await?;
+        let resp = self
+            .client
+            .request_json(Method::PUT, &path, Some(&body))
+            .await?;
         Ok(resp.status())
     }
 }
@@ -659,7 +724,10 @@ where
                 ("id", emoji_id),
             ],
         )?;
-        let resp = self.client.request_json(Method::DELETE, &path, None).await?;
+        let resp = self
+            .client
+            .request_json(Method::DELETE, &path, None)
+            .await?;
         Ok(resp.status())
     }
 
@@ -706,13 +774,21 @@ where
     pub async fn create(&self, guild_id: &str, body: &Value) -> Result<(http::StatusCode, Value)> {
         let template = require_path(&self.paths.announces_create, "announces_create")?;
         let path = render_path(&template, &[("guild_id", guild_id)])?;
-        self.client.request_value(Method::POST, &path, Some(body)).await
+        self.client
+            .request_value(Method::POST, &path, Some(body))
+            .await
     }
 
     pub async fn delete(&self, guild_id: &str, message_id: &str) -> Result<http::StatusCode> {
         let template = require_path(&self.paths.announces_delete, "announces_delete")?;
-        let path = render_path(&template, &[("guild_id", guild_id), ("message_id", message_id)])?;
-        let resp = self.client.request_json(Method::DELETE, &path, None).await?;
+        let path = render_path(
+            &template,
+            &[("guild_id", guild_id), ("message_id", message_id)],
+        )?;
+        let resp = self
+            .client
+            .request_json(Method::DELETE, &path, None)
+            .await?;
         Ok(resp.status())
     }
 
@@ -740,7 +816,9 @@ where
     pub async fn create(&self, guild_id: &str, body: &Value) -> Result<(http::StatusCode, Value)> {
         let template = require_path(&self.paths.api_permissions_create, "api_permissions_create")?;
         let path = render_path(&template, &[("guild_id", guild_id)])?;
-        self.client.request_value(Method::POST, &path, Some(body)).await
+        self.client
+            .request_value(Method::POST, &path, Some(body))
+            .await
     }
 }
 
@@ -754,29 +832,77 @@ impl<P> ChannelPermissionsApi<P>
 where
     P: TokenProvider,
 {
-    pub async fn get_user(&self, channel_id: &str, user_id: &str) -> Result<(http::StatusCode, Value)> {
-        let template = require_path(&self.paths.channel_permissions_get_user, "channel_permissions_get_user")?;
-        let path = render_path(&template, &[("channel_id", channel_id), ("user_id", user_id)])?;
+    pub async fn get_user(
+        &self,
+        channel_id: &str,
+        user_id: &str,
+    ) -> Result<(http::StatusCode, Value)> {
+        let template = require_path(
+            &self.paths.channel_permissions_get_user,
+            "channel_permissions_get_user",
+        )?;
+        let path = render_path(
+            &template,
+            &[("channel_id", channel_id), ("user_id", user_id)],
+        )?;
         self.client.get_value(&path).await
     }
 
-    pub async fn set_user(&self, channel_id: &str, user_id: &str, body: &Value) -> Result<http::StatusCode> {
-        let template = require_path(&self.paths.channel_permissions_set_user, "channel_permissions_set_user")?;
-        let path = render_path(&template, &[("channel_id", channel_id), ("user_id", user_id)])?;
-        let resp = self.client.request_json(Method::PUT, &path, Some(body)).await?;
+    pub async fn set_user(
+        &self,
+        channel_id: &str,
+        user_id: &str,
+        body: &Value,
+    ) -> Result<http::StatusCode> {
+        let template = require_path(
+            &self.paths.channel_permissions_set_user,
+            "channel_permissions_set_user",
+        )?;
+        let path = render_path(
+            &template,
+            &[("channel_id", channel_id), ("user_id", user_id)],
+        )?;
+        let resp = self
+            .client
+            .request_json(Method::PUT, &path, Some(body))
+            .await?;
         Ok(resp.status())
     }
 
-    pub async fn get_role(&self, channel_id: &str, role_id: &str) -> Result<(http::StatusCode, Value)> {
-        let template = require_path(&self.paths.channel_permissions_get_role, "channel_permissions_get_role")?;
-        let path = render_path(&template, &[("channel_id", channel_id), ("role_id", role_id)])?;
+    pub async fn get_role(
+        &self,
+        channel_id: &str,
+        role_id: &str,
+    ) -> Result<(http::StatusCode, Value)> {
+        let template = require_path(
+            &self.paths.channel_permissions_get_role,
+            "channel_permissions_get_role",
+        )?;
+        let path = render_path(
+            &template,
+            &[("channel_id", channel_id), ("role_id", role_id)],
+        )?;
         self.client.get_value(&path).await
     }
 
-    pub async fn set_role(&self, channel_id: &str, role_id: &str, body: &Value) -> Result<http::StatusCode> {
-        let template = require_path(&self.paths.channel_permissions_set_role, "channel_permissions_set_role")?;
-        let path = render_path(&template, &[("channel_id", channel_id), ("role_id", role_id)])?;
-        let resp = self.client.request_json(Method::PUT, &path, Some(body)).await?;
+    pub async fn set_role(
+        &self,
+        channel_id: &str,
+        role_id: &str,
+        body: &Value,
+    ) -> Result<http::StatusCode> {
+        let template = require_path(
+            &self.paths.channel_permissions_set_role,
+            "channel_permissions_set_role",
+        )?;
+        let path = render_path(
+            &template,
+            &[("channel_id", channel_id), ("role_id", role_id)],
+        )?;
+        let resp = self
+            .client
+            .request_json(Method::PUT, &path, Some(body))
+            .await?;
         Ok(resp.status())
     }
 }
@@ -799,15 +925,24 @@ where
 
     pub async fn add(&self, channel_id: &str, message_id: &str) -> Result<http::StatusCode> {
         let template = require_path(&self.paths.pins_add, "pins_add")?;
-        let path = render_path(&template, &[("channel_id", channel_id), ("message_id", message_id)])?;
+        let path = render_path(
+            &template,
+            &[("channel_id", channel_id), ("message_id", message_id)],
+        )?;
         let resp = self.client.request_json(Method::PUT, &path, None).await?;
         Ok(resp.status())
     }
 
     pub async fn delete(&self, channel_id: &str, message_id: &str) -> Result<http::StatusCode> {
         let template = require_path(&self.paths.pins_delete, "pins_delete")?;
-        let path = render_path(&template, &[("channel_id", channel_id), ("message_id", message_id)])?;
-        let resp = self.client.request_json(Method::DELETE, &path, None).await?;
+        let path = render_path(
+            &template,
+            &[("channel_id", channel_id), ("message_id", message_id)],
+        )?;
+        let resp = self
+            .client
+            .request_json(Method::DELETE, &path, None)
+            .await?;
         Ok(resp.status())
     }
 }
@@ -850,39 +985,72 @@ where
     pub async fn create(&self, guild_id: &str, body: &Value) -> Result<(http::StatusCode, Value)> {
         let template = require_path(&self.paths.role_create, "role_create")?;
         let path = render_path(&template, &[("guild_id", guild_id)])?;
-        self.client.request_value(Method::POST, &path, Some(body)).await
+        self.client
+            .request_value(Method::POST, &path, Some(body))
+            .await
     }
 
-    pub async fn update(&self, guild_id: &str, role_id: &str, body: &Value) -> Result<(http::StatusCode, Value)> {
+    pub async fn update(
+        &self,
+        guild_id: &str,
+        role_id: &str,
+        body: &Value,
+    ) -> Result<(http::StatusCode, Value)> {
         let template = require_path(&self.paths.role_update, "role_update")?;
         let path = render_path(&template, &[("guild_id", guild_id), ("role_id", role_id)])?;
-        self.client.request_value(Method::PATCH, &path, Some(body)).await
+        self.client
+            .request_value(Method::PATCH, &path, Some(body))
+            .await
     }
 
     pub async fn delete(&self, guild_id: &str, role_id: &str) -> Result<http::StatusCode> {
         let template = require_path(&self.paths.role_delete, "role_delete")?;
         let path = render_path(&template, &[("guild_id", guild_id), ("role_id", role_id)])?;
-        let resp = self.client.request_json(Method::DELETE, &path, None).await?;
+        let resp = self
+            .client
+            .request_json(Method::DELETE, &path, None)
+            .await?;
         Ok(resp.status())
     }
 
-    pub async fn add_member(&self, guild_id: &str, user_id: &str, role_id: &str) -> Result<http::StatusCode> {
+    pub async fn add_member(
+        &self,
+        guild_id: &str,
+        user_id: &str,
+        role_id: &str,
+    ) -> Result<http::StatusCode> {
         let template = require_path(&self.paths.role_member_add, "role_member_add")?;
         let path = render_path(
             &template,
-            &[("guild_id", guild_id), ("user_id", user_id), ("role_id", role_id)],
+            &[
+                ("guild_id", guild_id),
+                ("user_id", user_id),
+                ("role_id", role_id),
+            ],
         )?;
         let resp = self.client.request_json(Method::PUT, &path, None).await?;
         Ok(resp.status())
     }
 
-    pub async fn remove_member(&self, guild_id: &str, user_id: &str, role_id: &str) -> Result<http::StatusCode> {
+    pub async fn remove_member(
+        &self,
+        guild_id: &str,
+        user_id: &str,
+        role_id: &str,
+    ) -> Result<http::StatusCode> {
         let template = require_path(&self.paths.role_member_delete, "role_member_delete")?;
         let path = render_path(
             &template,
-            &[("guild_id", guild_id), ("user_id", user_id), ("role_id", role_id)],
+            &[
+                ("guild_id", guild_id),
+                ("user_id", user_id),
+                ("role_id", role_id),
+            ],
         )?;
-        let resp = self.client.request_json(Method::DELETE, &path, None).await?;
+        let resp = self
+            .client
+            .request_json(Method::DELETE, &path, None)
+            .await?;
         Ok(resp.status())
     }
 }
@@ -903,16 +1071,29 @@ where
         self.client.get_value(&path).await
     }
 
-    pub async fn get(&self, channel_id: &str, schedule_id: &str) -> Result<(http::StatusCode, Value)> {
+    pub async fn get(
+        &self,
+        channel_id: &str,
+        schedule_id: &str,
+    ) -> Result<(http::StatusCode, Value)> {
         let template = require_path(&self.paths.schedule_get, "schedule_get")?;
-        let path = render_path(&template, &[("channel_id", channel_id), ("schedule_id", schedule_id)])?;
+        let path = render_path(
+            &template,
+            &[("channel_id", channel_id), ("schedule_id", schedule_id)],
+        )?;
         self.client.get_value(&path).await
     }
 
-    pub async fn create(&self, channel_id: &str, body: &Value) -> Result<(http::StatusCode, Value)> {
+    pub async fn create(
+        &self,
+        channel_id: &str,
+        body: &Value,
+    ) -> Result<(http::StatusCode, Value)> {
         let template = require_path(&self.paths.schedule_create, "schedule_create")?;
         let path = render_path(&template, &[("channel_id", channel_id)])?;
-        self.client.request_value(Method::POST, &path, Some(body)).await
+        self.client
+            .request_value(Method::POST, &path, Some(body))
+            .await
     }
 
     pub async fn update(
@@ -922,14 +1103,25 @@ where
         body: &Value,
     ) -> Result<(http::StatusCode, Value)> {
         let template = require_path(&self.paths.schedule_update, "schedule_update")?;
-        let path = render_path(&template, &[("channel_id", channel_id), ("schedule_id", schedule_id)])?;
-        self.client.request_value(Method::PATCH, &path, Some(body)).await
+        let path = render_path(
+            &template,
+            &[("channel_id", channel_id), ("schedule_id", schedule_id)],
+        )?;
+        self.client
+            .request_value(Method::PATCH, &path, Some(body))
+            .await
     }
 
     pub async fn delete(&self, channel_id: &str, schedule_id: &str) -> Result<http::StatusCode> {
         let template = require_path(&self.paths.schedule_delete, "schedule_delete")?;
-        let path = render_path(&template, &[("channel_id", channel_id), ("schedule_id", schedule_id)])?;
-        let resp = self.client.request_json(Method::DELETE, &path, None).await?;
+        let path = render_path(
+            &template,
+            &[("channel_id", channel_id), ("schedule_id", schedule_id)],
+        )?;
+        let resp = self
+            .client
+            .request_json(Method::DELETE, &path, None)
+            .await?;
         Ok(resp.status())
     }
 }
@@ -950,22 +1142,45 @@ where
         self.client.get_value(&path).await
     }
 
-    pub async fn get_thread(&self, channel_id: &str, thread_id: &str) -> Result<(http::StatusCode, Value)> {
+    pub async fn get_thread(
+        &self,
+        channel_id: &str,
+        thread_id: &str,
+    ) -> Result<(http::StatusCode, Value)> {
         let template = require_path(&self.paths.forum_thread_get, "forum_thread_get")?;
-        let path = render_path(&template, &[("channel_id", channel_id), ("thread_id", thread_id)])?;
+        let path = render_path(
+            &template,
+            &[("channel_id", channel_id), ("thread_id", thread_id)],
+        )?;
         self.client.get_value(&path).await
     }
 
-    pub async fn create_thread(&self, channel_id: &str, body: &Value) -> Result<(http::StatusCode, Value)> {
+    pub async fn create_thread(
+        &self,
+        channel_id: &str,
+        body: &Value,
+    ) -> Result<(http::StatusCode, Value)> {
         let template = require_path(&self.paths.forum_thread_create, "forum_thread_create")?;
         let path = render_path(&template, &[("channel_id", channel_id)])?;
-        self.client.request_value(Method::PUT, &path, Some(body)).await
+        self.client
+            .request_value(Method::PUT, &path, Some(body))
+            .await
     }
 
-    pub async fn delete_thread(&self, channel_id: &str, thread_id: &str) -> Result<http::StatusCode> {
+    pub async fn delete_thread(
+        &self,
+        channel_id: &str,
+        thread_id: &str,
+    ) -> Result<http::StatusCode> {
         let template = require_path(&self.paths.forum_thread_delete, "forum_thread_delete")?;
-        let path = render_path(&template, &[("channel_id", channel_id), ("thread_id", thread_id)])?;
-        let resp = self.client.request_json(Method::DELETE, &path, None).await?;
+        let path = render_path(
+            &template,
+            &[("channel_id", channel_id), ("thread_id", thread_id)],
+        )?;
+        let resp = self
+            .client
+            .request_json(Method::DELETE, &path, None)
+            .await?;
         Ok(resp.status())
     }
 }
@@ -983,14 +1198,25 @@ where
     pub async fn mute_all(&self, guild_id: &str, body: &Value) -> Result<http::StatusCode> {
         let template = require_path(&self.paths.mute_all, "mute_all")?;
         let path = render_path(&template, &[("guild_id", guild_id)])?;
-        let resp = self.client.request_json(Method::PATCH, &path, Some(body)).await?;
+        let resp = self
+            .client
+            .request_json(Method::PATCH, &path, Some(body))
+            .await?;
         Ok(resp.status())
     }
 
-    pub async fn mute_user(&self, guild_id: &str, user_id: &str, body: &Value) -> Result<http::StatusCode> {
+    pub async fn mute_user(
+        &self,
+        guild_id: &str,
+        user_id: &str,
+        body: &Value,
+    ) -> Result<http::StatusCode> {
         let template = require_path(&self.paths.mute_user, "mute_user")?;
         let path = render_path(&template, &[("guild_id", guild_id), ("user_id", user_id)])?;
-        let resp = self.client.request_json(Method::PATCH, &path, Some(body)).await?;
+        let resp = self
+            .client
+            .request_json(Method::PATCH, &path, Some(body))
+            .await?;
         Ok(resp.status())
     }
 }
@@ -1025,7 +1251,9 @@ where
     pub async fn send(&self, openid: &str, body: &Value) -> Result<(http::StatusCode, Value)> {
         let template = require_path(&self.paths.c2c_message_send, "c2c_message_send")?;
         let path = render_path(&template, &[("openid", openid)])?;
-        self.client.request_value(Method::POST, &path, Some(body)).await
+        self.client
+            .request_value(Method::POST, &path, Some(body))
+            .await
     }
 }
 
@@ -1045,7 +1273,12 @@ where
         self.client.get_value(&path).await
     }
 
-    pub async fn guilds(&self, before: Option<&str>, after: Option<&str>, limit: Option<u64>) -> Result<(http::StatusCode, Value)> {
+    pub async fn guilds(
+        &self,
+        before: Option<&str>,
+        after: Option<&str>,
+        limit: Option<u64>,
+    ) -> Result<(http::StatusCode, Value)> {
         let template = require_path(&self.paths.user_guilds, "user_guilds")?;
         let path = render_path(&template, &[])?;
         let path = append_query(
@@ -1076,9 +1309,13 @@ fn render_path(template: &str, params: &[(&str, &str)]) -> Result<String> {
     for (key, value) in params {
         let needle = format!("{{{}}}", key);
         if !out.contains(&needle) {
-            return Err(Error::Other(format!("path template missing placeholder: {needle}")));
+            return Err(Error::Other(format!(
+                "path template missing placeholder: {needle}"
+            )));
         }
-        out = out.replace(&needle, value);
+        // 路径参数做百分号编码，避免 `/ ? # &` 等字符污染路由。
+        let encoded = encode_path_segment(value);
+        out = out.replace(&needle, &encoded);
     }
     Ok(out)
 }
@@ -1087,7 +1324,10 @@ fn append_query(path: String, params: &[(&str, Option<String>)]) -> String {
     let mut parts = Vec::new();
     for (key, value) in params {
         if let Some(v) = value {
-            parts.push(format!("{key}={v}"));
+            // query key/value 分别编码，避免拼接注入。
+            let encoded_key = encode_query_component(key);
+            let encoded_value = encode_query_component(v);
+            parts.push(format!("{encoded_key}={encoded_value}"));
         }
     }
     if parts.is_empty() {
@@ -1095,4 +1335,35 @@ fn append_query(path: String, params: &[(&str, Option<String>)]) -> String {
     }
     let separator = if path.contains('?') { "&" } else { "?" };
     format!("{path}{separator}{}", parts.join("&"))
+}
+
+fn encode_path_segment(value: &str) -> String {
+    utf8_percent_encode(value, NON_ALPHANUMERIC).to_string()
+}
+
+fn encode_query_component(value: &str) -> String {
+    utf8_percent_encode(value, NON_ALPHANUMERIC).to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{append_query, render_path};
+
+    #[test]
+    fn render_path_percent_encodes_path_values() {
+        let path = render_path("/v2/users/{openid}/messages", &[("openid", "user/a?b")]).unwrap();
+        assert_eq!(path, "/v2/users/user%2Fa%3Fb/messages");
+    }
+
+    #[test]
+    fn append_query_percent_encodes_query_values() {
+        let path = append_query(
+            "/users/@me/guilds".to_string(),
+            &[
+                ("before", Some("a/b&x=1".to_string())),
+                ("limit", Some("100".to_string())),
+            ],
+        );
+        assert_eq!(path, "/users/@me/guilds?before=a%2Fb%26x%3D1&limit=100");
+    }
 }

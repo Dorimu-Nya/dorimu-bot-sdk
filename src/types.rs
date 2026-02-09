@@ -13,7 +13,10 @@ pub struct EventContext {
 }
 
 impl EventContext {
-    pub fn parse_event(&self, schema: &crate::event::EventSchema) -> crate::Result<crate::event::EventEnvelope<Value>> {
+    pub fn parse_event(
+        &self,
+        schema: &crate::event::EventSchema,
+    ) -> crate::Result<crate::event::EventEnvelope<Value>> {
         schema.extract(&self.payload)
     }
 
@@ -51,7 +54,10 @@ impl EventResponse {
 
     pub fn json(value: &Value) -> Self {
         let mut headers = HeaderMap::new();
-        headers.insert(http::header::CONTENT_TYPE, http::HeaderValue::from_static("application/json"));
+        headers.insert(
+            http::header::CONTENT_TYPE,
+            http::HeaderValue::from_static("application/json"),
+        );
         let body = Bytes::from(serde_json::to_vec(value).unwrap_or_default());
         Self {
             status: StatusCode::OK,

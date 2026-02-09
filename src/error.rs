@@ -14,6 +14,8 @@ pub enum Error {
     MissingHeader(&'static str),
     #[error("invalid header: {0}")]
     InvalidHeader(String),
+    #[error("invalid timestamp: {0}")]
+    InvalidTimestamp(String),
     #[error("event name not found")]
     EventNameNotFound,
     #[error("token error: {0}")]

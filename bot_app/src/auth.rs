@@ -8,9 +8,20 @@ pub struct AccessControl {
 
 impl AccessControl {
     pub fn from_env() -> Self {
-        let allowlist = parse_list(std::env::var("BOT_ALLOW_OPENIDS").unwrap_or_default().as_str());
-        let denylist = parse_list(std::env::var("BOT_DENY_OPENIDS").unwrap_or_default().as_str());
-        Self { allowlist, denylist }
+        let allowlist = parse_list(
+            std::env::var("BOT_ALLOW_OPENIDS")
+                .unwrap_or_default()
+                .as_str(),
+        );
+        let denylist = parse_list(
+            std::env::var("BOT_DENY_OPENIDS")
+                .unwrap_or_default()
+                .as_str(),
+        );
+        Self {
+            allowlist,
+            denylist,
+        }
     }
 
     pub fn allowed(&self, openid: &str) -> bool {

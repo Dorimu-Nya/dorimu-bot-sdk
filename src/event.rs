@@ -38,7 +38,13 @@ impl EventSchema {
         let data = match &self.data_path {
             Some(path) => extract_value(value, path)
                 .cloned()
-                .or_else(|| if self.data_required { None } else { Some(Value::Null) })
+                .or({
+                    if self.data_required {
+                        None
+                    } else {
+                        Some(Value::Null)
+                    }
+                })
                 .ok_or_else(|| Error::Other("event data missing".to_string()))?,
             None => value.clone(),
         };
@@ -46,7 +52,10 @@ impl EventSchema {
         Ok(EventEnvelope {
             name,
             data,
-            id: self.id_path.as_ref().and_then(|p| extract_string_opt(value, p)),
+            id: self
+                .id_path
+                .as_ref()
+                .and_then(|p| extract_string_opt(value, p)),
             timestamp: self
                 .timestamp_path
                 .as_ref()

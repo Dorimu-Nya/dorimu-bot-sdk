@@ -1,4 +1,7 @@
-use qqbot_sdk::{event_name_field, EventResponse, EventRouter, WebhookApp, WebhookConfig};
+use qqbot_sdk::{
+    event_name_field, EventResponse, EventRouter, SignatureVerificationMode, WebhookApp,
+    WebhookConfig,
+};
 use std::net::SocketAddr;
 
 #[tokio::main]
@@ -14,6 +17,7 @@ async fn main() {
 
     let config = WebhookConfig {
         path: "/webhook".to_string(),
+        signature_verification: SignatureVerificationMode::Off,
         event_name_extractor: event_name_field("t"),
         ..Default::default()
     };
