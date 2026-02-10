@@ -211,6 +211,15 @@ async fn handle_inner(
         (logger)(&headers, &body);
     }
 
+    // hook 优先于签名验证执行：QQ 平台的验证回调（op=13）在首次配置
+    // webhook 时可能不携带有效签名，必须在签名校验之前处理。
+    let payload: Value = serde_json::from_slice(&body)?;
+    if let Some(hook) = &app.config.hook {
+        if let Some(resp) = (hook)(&headers, &body, &payload)? {
+            return Ok(resp);
+        }
+    }
+
     match app.config.signature_verification {
         SignatureVerificationMode::Off => {}
         SignatureVerificationMode::Monitor => {
@@ -229,13 +238,6 @@ async fn handle_inner(
                 crate::Error::Other("signature verifier is required in enforce mode".to_string())
             })?;
             verifier.verify(&headers, &body)?;
-        }
-    }
-
-    let payload: Value = serde_json::from_slice(&body)?;
-    if let Some(hook) = &app.config.hook {
-        if let Some(resp) = (hook)(&headers, &body, &payload)? {
-            return Ok(resp);
         }
     }
     let event_name = (app.config.event_name_extractor)(&payload);

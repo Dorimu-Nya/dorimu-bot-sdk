@@ -221,7 +221,7 @@ async fn handle_command(command: Command, prefix: &str, store: &KvStore) -> Opti
         },
         Command::Set { key, value } => match store.set(&key, &value).await {
             Ok(_) => Some(format!("已保存: {}", key)),
-            Err(_) => Some("写入失败，请稍后再试".to_string()),
+            Err(e) => Some(format!("写入失败: {}", e)),
         },
         Command::Unknown => Some(help_text(prefix)),
     }

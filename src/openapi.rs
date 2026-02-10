@@ -60,6 +60,8 @@ where
 
         // 首轮读取未命中后，进入单飞锁。
         let _refresh_guard = self.refresh_lock.lock().await;
+        // 等待锁期间可能耗时较长，刷新时间戳避免误判。
+        let now = SystemTime::now();
         {
             // 双重检查：等待锁期间可能已有其他协程刷新成功。
             let guard = self.cache.read().await;
