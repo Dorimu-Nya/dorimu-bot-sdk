@@ -15,12 +15,13 @@ pub use crate::error::{Error, Result};
 pub use crate::event::{EventEnvelope, EventSchema};
 pub use crate::events::{
     AtGuildInfo, AtInfo, AtRoleInfo, AtUserInfo, Attachment, AudioOrLiveChannelMemberEvent,
-    C2cAuthor, C2cMessage, C2cMessageScene, C2cMsgReceiveEvent, C2cMsgRejectEvent, ChannelEvent,
+     C2cEventType, C2cMsgReceiveEvent, C2cMsgRejectEvent,
     ChannelInfo, Elem, Emoji, EmojiInfo, EventData, EventType, ForumAuditResult, ForumPostEvent,
     ForumPostInfo, ForumReplyEvent, ForumReplyInfo, ForumThreadEvent, ForumThreadInfo,
-    FriendAddEvent, FriendDelEvent, GatewayPayload, GroupAddRobotEvent, GroupAtMessage,
-    GroupAuthor, GroupDelRobotEvent, GroupMsgRejectEvent, GuildEvent, GuildMemberEvent, ImageElem,
-    Interaction, InteractionData, InteractionResolved, Member, Message, MessageReaction,
+    FriendAddEvent, FriendDelEvent, WebhookPayload,
+    GroupEventType,
+    GuildMemberEvent, ImageElem, Member,
+    GuildMessages, MessageReaction,
     OpenForumEvent, Paragraph, ParagraphProps, PlatImage, PlatVideo, ReactionTarget, RichObject,
     RichText, RichTextValue, TextElem, TextInfo, TextProps, TypedEvent, UrlElem, UrlInfo, User,
     ValidationRequest, ValidationResponse, VideoElem,

@@ -1,63 +1,72 @@
 use serde::{Deserialize, Serialize};
-
+use super::audio::{AudioOrLiveChannelMemberEvent};
+use super::forum::{ OpenForumEvent};
+use super::guild::{GuildEvent, ChannelEvent, };
+use super::messages::{GuildMessages};
+use super::member::{GuildMemberEvent};
 /// 频道事件
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "t", content = "d")]
 pub enum GuildEventType {
     /// 频道内 @ 机器人的消息事件
-    AtMessageCreate,
+    AtMessageCreate(GuildMessages),
     /// 撤回频道消息公域事件
-    PublicMessageDelete,
+    PublicMessageDelete(),
     /// 私信创建事件
-    DirectMessageCreate,
+    DirectMessageCreate(GuildMessages),
     /// 频道私信删除事件
-    DirectMessageDelete,
+    DirectMessageDelete(),
     /// 为消息添加表情表态
     MessageReactionAdd,
     /// 为消息删除表情表态
     MessageReactionRemove,
     /// 频道内消息审核通过
-    MessageAuditPass,
+    MessageAuditPass(),
     /// 频道内消息审核不通过
-    MessageAuditReject,
+    MessageAuditReject(),
     /// 公域论坛事件：用户创建主题
-    OpenForumThreadCreate,
+    OpenForumThreadCreate(OpenForumEvent),
     /// 公域论坛事件：用户创建帖子
-    OpenForumPostCreate,
+    OpenForumPostCreate(OpenForumEvent),
     /// 公域论坛事件：用户回复帖子
-    OpenForumReplyCreate,
+    OpenForumReplyCreate(OpenForumEvent),
     /// 公域论坛事件：用户更新主题
-    OpenForumThreadUpdate,
+    OpenForumThreadUpdate(OpenForumEvent),
     /// 公域论坛事件：用户删除帖子
-    OpenForumPostDelete,
+    OpenForumPostDelete(OpenForumEvent),
     /// 公域论坛事件：用户回复被删除
-    OpenForumReplyDelete,
+    OpenForumReplyDelete(OpenForumEvent),
     /// 公域论坛事件：用户删除主题
-    OpenForumThreadDelete,
+    OpenForumThreadDelete(OpenForumEvent),
     /// 频道创建事件
-    GuildCreate,
+    GuildCreate(GuildEvent),
     /// 频道信息变更事件
-    GuildUpdate,
+    GuildUpdate(GuildEvent),
     /// 频道删除事件
-    GuildDelete,
+    GuildDelete(GuildEvent),
     /// 子频道创建事件
-    ChannelCreate,
+    ChannelCreate(ChannelEvent),
     /// 子频道修改事件
-    ChannelUpdate,
+    ChannelUpdate(ChannelEvent),
     /// 子频道删除事件
-    ChannelDelete,
+    ChannelDelete(ChannelEvent),
     /// 新成员加入频道事件
-    GuildMemberAdd,
+    GuildMemberAdd(GuildMemberEvent),
     /// 频道成员离开频道事件
-    GuildMemberRemove,
+    GuildMemberRemove(GuildMemberEvent),
     /// 频道成员信息更新
-    GuildMemberUpdate,
+    GuildMemberUpdate(GuildMemberEvent),
     /// 音频开始播放事件
-    AudioStart,
+    AudioStart(),
     /// 音频播放结束事件
-    AudioFinish,
+    AudioFinish(),
     /// 机器人上麦事件
-    AudioOnMic,
+    AudioOnMic(),
     /// 机器人下麦事件
-    AudioOffMic,
+    AudioOffMic(),
+    // 下面这两个在BOT后台webhook可订阅列表里没看见有，但是文档里的事件列表又有，不是很懂
+    /// 音视频/直播子频道成员进事件
+    AudioOrLiveChannelMemberEnter(AudioOrLiveChannelMemberEvent),
+    /// 音视频/直播子频道成员出事件
+    AudioOrLiveChannelMemberExit(AudioOrLiveChannelMemberEvent),
 }

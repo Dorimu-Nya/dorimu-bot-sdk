@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::common::Member;
+use crate::Member;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GuildMemberEvent {

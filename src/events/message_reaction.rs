@@ -1,2 +1,2 @@
-pub mod models;
+pub mod reaction;
 pub mod event_type;
