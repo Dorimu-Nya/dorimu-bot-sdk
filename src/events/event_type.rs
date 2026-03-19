@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
-use crate::{C2cEventType, GroupEventType};
-use crate::events::guild::event_type::GuildEventType;
-use crate::events::interaction::event_type::InteractionEventType;
-use crate::events::message_reaction::event_type::MessageReactionEventType;
+use super::c2c::event_type::C2cEventType;
+use super::group::event_type::GroupEventType;
+use super::guild::event_type::GuildEventType;
+use super::interaction::event_type::InteractionEventType;
+use super::message_reaction::event_type::MessageReactionEventType;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]

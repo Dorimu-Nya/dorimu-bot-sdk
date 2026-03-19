@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use crate::MessageReaction;
+use super::reaction::MessageReaction;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "t", content = "d")]

@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use super::super::{Attachment};
+use super::super::common::{Attachment};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GroupAuthor {

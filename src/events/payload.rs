@@ -1,13 +1,36 @@
 use serde::{Deserialize, Serialize};
-use crate::events::opcode::Opcode;
-use crate::EventType;
+use crate::events::validation::ValidationRequest;
+use super::opcode::{DispatchOp, HttpCallbackAckOp, WebhookAddressVerifyOp};
+use super::event_type::EventType;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct WebhookPayload {
+#[serde(untagged)]
+pub enum WebhookPayload {
+    Dispatch(DispatchPayload),
+    HttpCallbackAck(HttpCallbackAckPayload),
+    WebhookAddressVerify(WebhookAddressVerifyPayload),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DispatchPayload {
     pub id: Option<String>,
-    /// OpCode
-    pub op: Opcode,
     pub s: Option<u64>,
+    pub op: DispatchOp,
     #[serde(flatten)]
     pub event: EventType,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct HttpCallbackAckPayload {
+    pub id: Option<String>,
+    pub s: Option<u64>,
+    pub op: HttpCallbackAckOp,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WebhookAddressVerifyPayload {
+    pub id: Option<String>,
+    pub s: Option<u64>,
+    pub op: WebhookAddressVerifyOp,
+    pub d: ValidationRequest,
 }
