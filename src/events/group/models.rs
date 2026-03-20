@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use crate::events::common::Message;
 use super::super::common::{Attachment};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -16,6 +17,16 @@ pub struct GroupAtMessage {
     pub attachments: Option<Vec<Attachment>>,
     #[serde(default)]
     pub msg_seq: Option<u64>,
+}
+
+impl Message for GroupAtMessage {
+    fn get_content(&self) -> Option<String> {
+        self.content.clone()
+    }
+
+    fn get_author_openid(&self) -> String {
+        self.author.member_openid.clone()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

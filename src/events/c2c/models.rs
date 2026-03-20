@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use crate::events::common::Message;
 use super::super::common::Attachment;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -23,6 +24,16 @@ pub struct C2cMessage {
     pub message_scene: Option<C2cMessageScene>,
     #[serde(default)]
     pub msg_seq: Option<u64>,
+}
+
+impl Message for C2cMessage {
+    fn get_content(&self) -> Option<String> {
+        self.content.clone()
+    }
+
+    fn get_author_openid(&self) -> String {
+        self.author.id.clone().unwrap()
+    }
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FriendAddEvent {

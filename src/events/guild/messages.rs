@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
-
-use super::super::common::{Attachment, Member, User};
+use super::member::{Member, User};
+use super::super::common::{Attachment};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GuildMessages {
