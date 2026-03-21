@@ -1,11 +1,16 @@
 use axum::{Json, Router};
 use axum::response::IntoResponse;
 use axum::routing::any;
+use crate::container::COMMANDS;
 use crate::events::payload::WebhookPayload;
 use crate::handler::{dispatch_event, handle_address_verify};
 
 pub async fn run_application() -> std::io::Result<()> {
     tracing_subscriber::fmt::init();
+
+    COMMANDS.iter().for_each(|(cmd, _handler)| {
+        println!("Executing command \"{}\"", cmd);
+    });
 
     let app = Router::new()
         .route("/webhook", any(webhook_handler));
@@ -18,7 +23,7 @@ async fn webhook_handler(Json(payload): Json<WebhookPayload>) -> impl IntoRespon
     println!("{:?}", payload);
     match payload {
         WebhookPayload::Dispatch(payload) => {
-            dispatch_event(payload);
+            dispatch_event(payload).await;
             ().into_response()
         },
         WebhookPayload::HttpCallbackAck(_) => ().into_response(),

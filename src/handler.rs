@@ -1,3 +1,5 @@
+use qqbot_sdk::container::COMMANDS;
+use qqbot_sdk::events::common::Message;
 use super::events::c2c::event_type::C2cEventType;
 use super::events::event_type::EventType;
 use super::events::group::event_type::GroupEventType;
@@ -16,19 +18,21 @@ pub fn handle_address_verify(req: ValidationRequest) -> Result<ValidationRespons
     })
 }
 
-pub fn dispatch_event(payload: DispatchPayload) {
+pub async fn dispatch_event(payload: DispatchPayload) {
     match payload.event {
-        EventType::C2cEventType(event) => matching_c2c_event(event),
-        EventType::GroupEventType(event) => matching_group_event(event),
-        EventType::GuildEventType(event) => matching_guild_event(event),
-        EventType::InteractionEventType(event) => matching_interaction_event(event),
-        EventType::MessageReactionEventType(event) => matching_message_reaction_event(event),
+        EventType::C2cEventType(event) => matching_c2c_event(event).await,
+        EventType::GroupEventType(event) => matching_group_event(event).await,
+        EventType::GuildEventType(event) => matching_guild_event(event).await,
+        EventType::InteractionEventType(event) => matching_interaction_event(event).await,
+        EventType::MessageReactionEventType(event) => matching_message_reaction_event(event).await,
     }
 }
 
-fn matching_c2c_event(event: C2cEventType) {
+async fn matching_c2c_event(event: C2cEventType) {
     match event {
-        C2cEventType::C2cMessageCreate(message) => {}
+        C2cEventType::C2cMessageCreate(message) => {
+            handle_messaging(&message)
+        }
         C2cEventType::FriendAdd(_) => {}
         C2cEventType::FriendDel(_) => {}
         C2cEventType::C2cMsgReject(_) => {}
@@ -36,9 +40,11 @@ fn matching_c2c_event(event: C2cEventType) {
     }
 }
 
-fn matching_group_event(event: GroupEventType) {
+async fn matching_group_event(event: GroupEventType) {
     match event {
-        GroupEventType::GroupAtMessageCreate(_) => {}
+        GroupEventType::GroupAtMessageCreate(message) => {
+            handle_messaging(&message)
+        }
         GroupEventType::GroupAddRobot(_) => {}
         GroupEventType::GroupDelRobot(_) => {}
         GroupEventType::GroupMsgReceive(_) => {}
@@ -47,11 +53,13 @@ fn matching_group_event(event: GroupEventType) {
     }
 }
 
-fn matching_guild_event(event: GuildEventType) {
+async fn matching_guild_event(event: GuildEventType) {
     match event {
-        GuildEventType::AtMessageCreate(_) => {}
+        GuildEventType::AtMessageCreate(message) => {
+        }
         GuildEventType::PublicMessageDelete() => {}
-        GuildEventType::DirectMessageCreate(_) => {}
+        GuildEventType::DirectMessageCreate(message) => {
+        }
         GuildEventType::DirectMessageDelete() => {}
         GuildEventType::MessageReactionAdd => {}
         GuildEventType::MessageReactionRemove => {}
@@ -82,13 +90,26 @@ fn matching_guild_event(event: GuildEventType) {
     }
 }
 
-fn matching_interaction_event(event: InteractionEventType) {
+async fn matching_interaction_event(event: InteractionEventType) {
     match event { InteractionEventType::InteractionCreate(_) => {} }
 }
 
-fn matching_message_reaction_event(event: MessageReactionEventType) {
+async fn matching_message_reaction_event(event: MessageReactionEventType) {
     match event {
         MessageReactionEventType::MessageReactionAdd(_) => {}
         MessageReactionEventType::MessageReactionRemove(_) => {}
+    }
+}
+
+fn handle_messaging(message: &dyn Message) {
+    match message.get_content() {
+        None => {}
+        Some(msg) => {
+            let result: Vec<&str> = msg.split_whitespace().collect();
+            if let Some(f) = result.get(0).and_then(|cmd| COMMANDS.get(cmd)) {
+                // TODO 参数的传递
+                f();
+            }
+        }
     }
 }
