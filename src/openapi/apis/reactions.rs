@@ -1,6 +1,6 @@
 use super::{
-    Method, OpenApiClient, OpenApiPaths, Result, TokenProvider, Value, append_query, render_path,
-    require_path,
+    append_query, render_path, require_path, Method, OpenApiClient, OpenApiPaths, Result,
+    TokenProvider, Value,
 };
 
 /// 表情回应相关接口。
@@ -88,5 +88,3 @@ where
         self.client.get_value(&path).await
     }
 }
-
-

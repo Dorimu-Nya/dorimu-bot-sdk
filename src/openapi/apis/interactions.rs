@@ -1,5 +1,5 @@
 use super::{
-    Method, OpenApiClient, OpenApiPaths, Result, TokenProvider, json, render_path, require_path,
+    json, render_path, require_path, Method, OpenApiClient, OpenApiPaths, Result, TokenProvider,
 };
 
 /// 交互事件回包接口。
@@ -24,5 +24,3 @@ where
         Ok(resp.status())
     }
 }
-
-

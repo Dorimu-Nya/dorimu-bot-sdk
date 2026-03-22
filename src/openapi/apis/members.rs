@@ -1,6 +1,6 @@
 use super::{
-    Method, OpenApiClient, OpenApiPaths, Result, TokenProvider, Value, append_query, render_path,
-    require_path,
+    append_query, render_path, require_path, Method, OpenApiClient, OpenApiPaths, Result,
+    TokenProvider, Value,
 };
 
 /// 成员相关接口。
@@ -52,5 +52,3 @@ where
         Ok(resp.status())
     }
 }
-
-

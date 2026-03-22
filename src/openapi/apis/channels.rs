@@ -1,4 +1,4 @@
-use super::{OpenApiClient, OpenApiPaths, Result, TokenProvider, Value, render_path, require_path};
+use super::{render_path, require_path, OpenApiClient, OpenApiPaths, Result, TokenProvider, Value};
 
 /// 子频道（Channel）相关接口。
 #[derive(Clone)]
@@ -23,5 +23,3 @@ where
         self.client.get_value(&path).await
     }
 }
-
-

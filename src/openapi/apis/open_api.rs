@@ -1,8 +1,7 @@
 use super::{
-    AnnouncesApi, ApiPermissionsApi, C2cMessagesApi, ChannelPermissionsApi, ChannelsApi,
-    ForumsApi, GuildsApi, InteractionsApi, MembersApi, MessageSettingsApi, MuteApi,
-    OpenApiClient, OpenApiPaths, PinsApi, ReactionsApi, RolesApi, SchedulesApi, TokenProvider,
-    UsersApi,
+    AnnouncesApi, ApiPermissionsApi, C2cMessagesApi, ChannelPermissionsApi, ChannelsApi, ForumsApi,
+    GuildsApi, InteractionsApi, MembersApi, MessageSettingsApi, MuteApi, OpenApiClient,
+    OpenApiPaths, PinsApi, ReactionsApi, RolesApi, SchedulesApi, TokenProvider, UsersApi,
 };
 
 /// OpenAPI 业务入口，按领域返回各子 API。
@@ -132,4 +131,3 @@ where
         }
     }
 }
-

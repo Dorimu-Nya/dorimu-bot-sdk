@@ -1,4 +1,6 @@
-use super::{Method, OpenApiClient, OpenApiPaths, Result, TokenProvider, Value, render_path, require_path};
+use super::{
+    render_path, require_path, Method, OpenApiClient, OpenApiPaths, Result, TokenProvider, Value,
+};
 
 /// C2C 消息发送接口。
 #[derive(Clone)]
@@ -19,5 +21,3 @@ where
             .await
     }
 }
-
-

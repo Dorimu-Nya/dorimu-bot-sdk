@@ -1,4 +1,6 @@
-use super::{Method, OpenApiClient, OpenApiPaths, Result, TokenProvider, Value, render_path, require_path};
+use super::{
+    render_path, require_path, Method, OpenApiClient, OpenApiPaths, Result, TokenProvider, Value,
+};
 
 /// 子频道权限相关接口。
 #[derive(Clone)]
@@ -85,5 +87,3 @@ where
         Ok(resp.status())
     }
 }
-
-

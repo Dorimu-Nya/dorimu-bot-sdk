@@ -1,4 +1,7 @@
-use super::{OpenApiClient, OpenApiPaths, Result, TokenProvider, Value, append_query, render_path, require_path};
+use super::{
+    append_query, render_path, require_path, OpenApiClient, OpenApiPaths, Result, TokenProvider,
+    Value,
+};
 
 /// 用户信息相关接口。
 #[derive(Clone)]
@@ -36,5 +39,3 @@ where
         self.client.get_value(&path).await
     }
 }
-
-
