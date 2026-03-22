@@ -1,5 +1,7 @@
+use super::models::{
+    C2cMessage, C2cMsgReceiveEvent, C2cMsgRejectEvent, FriendAddEvent, FriendDelEvent,
+};
 use serde::{Deserialize, Serialize};
-use super::models::{C2cMessage, C2cMsgReceiveEvent, C2cMsgRejectEvent, FriendAddEvent, FriendDelEvent};
 
 /// 单聊事件
 

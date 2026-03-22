@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
-use crate::events::validation::ValidationRequest;
-use super::opcode::{DispatchOp, HttpCallbackAckOp, WebhookAddressVerifyOp};
 use super::event_type::EventType;
+use super::opcode::{DispatchOp, HttpCallbackAckOp, WebhookAddressVerifyOp};
+use crate::events::validation::ValidationRequest;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -19,6 +19,19 @@ pub struct DispatchPayload {
     #[serde(flatten)]
     pub event: EventType,
 }
+
+pub trait FromDispatchPayload<'a>: Sized {
+    fn from(req: &'a DispatchPayload) -> Self;
+}
+
+impl<'a> FromDispatchPayload<'a> for &'a DispatchPayload {
+    fn from(req: &'a DispatchPayload) -> Self {
+        req
+    }
+}
+
+
+
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HttpCallbackAckPayload {

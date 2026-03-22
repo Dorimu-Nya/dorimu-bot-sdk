@@ -11,15 +11,17 @@ mod openapi;
 mod router;
 mod signature;
 
-mod runner;
+mod container;
 mod handler;
 mod macros;
-mod container;
+mod runner;
 
 pub use inventory;
 
 pub use crate::error::{Error, Result};
 pub use crate::event::{EventEnvelope, EventSchema};
+pub use crate::events::common::{FromCommonMessage, CommonMessage};
+pub use crate::events::payload::DispatchPayload;
 
 pub use crate::http::{HttpClient, RetryPolicy};
 
@@ -30,10 +32,10 @@ pub use crate::openapi::{
     ReactionsApi, RolesApi, SchedulesApi, TokenManager, TokenProvider, UsersApi,
 };
 
+pub use crate::runner::run_application;
 pub use crate::signature::{
     public_key_from_bot_secret, sign_webhook_validation, ReplayProtectionConfig,
     ReplayProtectionMode, SignatureConfig, SignatureEncoding, SignatureVerifier,
 };
-pub use crate::runner::run_application;
 
-pub use crate::macros::command::CommandDef;
+pub use crate::macros::command::{CommandDef, CommandHandleFn};

@@ -29,7 +29,6 @@ pub struct Member {
     pub guild_id: Option<String>,
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GuildMemberEvent {
     #[serde(flatten)]

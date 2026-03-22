@@ -1,9 +1,11 @@
+use crate::events::common::CommonMessage;
 
-#[derive(Eq, PartialEq, Hash, Debug)]
+pub type CommandHandleFn = fn(&dyn CommonMessage);
+
+#[derive(Debug)]
 pub struct CommandDef {
     pub prefix: &'static str,
-    // TODO 支持带参数的函数
-    pub handler: fn(),
+    pub handler: CommandHandleFn,
 }
 
 inventory::collect!(CommandDef);

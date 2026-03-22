@@ -1,6 +1,5 @@
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
-
 #[derive(Debug, Serialize_repr, Deserialize_repr)]
 #[repr(u16)]
 pub enum DispatchOp {

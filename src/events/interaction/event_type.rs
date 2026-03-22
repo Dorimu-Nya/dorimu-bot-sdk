@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use super::models::Interaction;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "t", content = "d")]

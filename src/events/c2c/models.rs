@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
-use crate::events::common::Message;
 use super::super::common::Attachment;
+use crate::events::common::{CommonMessage, MessageFrom};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct C2cAuthor {
@@ -26,13 +26,33 @@ pub struct C2cMessage {
     pub msg_seq: Option<u64>,
 }
 
-impl Message for C2cMessage {
-    fn get_content(&self) -> Option<String> {
-        self.content.clone()
+impl CommonMessage for C2cMessage {
+    fn get_id(&self) -> &String {
+        &self.id
     }
 
-    fn get_author_openid(&self) -> String {
-        self.author.id.clone().unwrap()
+    fn get_content(&self) -> &Option<String> {
+        &self.content
+    }
+
+    fn get_author_openid(&self) -> &String {
+        &self.author.user_openid
+    }
+
+    fn get_timestamp(&self) -> &Option<String> {
+        &self.timestamp
+    }
+
+    fn get_attachments(&self) -> &Option<Vec<Attachment>> {
+        &self.attachments
+    }
+
+    fn get_msg_seq(&self) -> &Option<u64> {
+        &self.msg_seq
+    }
+
+    fn get_message_from_type() -> MessageFrom {
+        MessageFrom::C2c
     }
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]

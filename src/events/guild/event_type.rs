@@ -1,9 +1,9 @@
+use super::audio::AudioOrLiveChannelMemberEvent;
+use super::forum::OpenForumEvent;
+use super::guild::{ChannelEvent, GuildEvent};
+use super::member::GuildMemberEvent;
+use super::messages::GuildMessages;
 use serde::{Deserialize, Serialize};
-use super::audio::{AudioOrLiveChannelMemberEvent};
-use super::forum::{ OpenForumEvent};
-use super::guild::{GuildEvent, ChannelEvent, };
-use super::messages::{GuildMessages};
-use super::member::{GuildMemberEvent};
 /// 频道事件
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "t", content = "d")]

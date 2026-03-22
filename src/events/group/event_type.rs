@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use super::models::{GroupAddRobotEvent, GroupAtMessage, GroupDelRobotEvent, GroupMsgRejectEvent};
+use serde::{Deserialize, Serialize};
 
 /// 群事件
 #[derive(Debug, Serialize, Deserialize)]

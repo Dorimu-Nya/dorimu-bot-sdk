@@ -1,9 +1,9 @@
-use serde::{Deserialize, Serialize};
 use super::c2c::event_type::C2cEventType;
 use super::group::event_type::GroupEventType;
 use super::guild::event_type::GuildEventType;
 use super::interaction::event_type::InteractionEventType;
 use super::message_reaction::event_type::MessageReactionEventType;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
