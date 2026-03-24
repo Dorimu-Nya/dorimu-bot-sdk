@@ -1,4 +1,6 @@
-use super::{Method, OpenApiClient, OpenApiPaths, Result, TokenProvider, Value, render_path, require_path};
+use super::{
+    render_path, require_path, Method, OpenApiClient, OpenApiPaths, Result, TokenProvider, Value,
+};
 
 /// 公告相关接口。
 #[derive(Clone)]
@@ -36,5 +38,3 @@ where
         self.delete(guild_id, "all").await
     }
 }
-
-
