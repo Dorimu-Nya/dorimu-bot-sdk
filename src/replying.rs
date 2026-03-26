@@ -64,3 +64,15 @@ pub enum ReplyingMessage {
     Embed(ReplyingEmbed),
     Media(ReplyingMedia),
 }
+
+impl ReplyingMessage {
+    pub fn to_msg_type(&self) -> u8 {
+        match self {
+            Self::Text(_) => 0,
+            Self::Markdown(_) => 2,
+            Self::Ark(_) => 3,
+            Self::Embed(_) => 4,
+            Self::Media(_) => 7,
+        }
+    }
+}

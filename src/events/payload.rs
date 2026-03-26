@@ -30,9 +30,6 @@ impl<'a> FromDispatchPayload<'a> for &'a DispatchPayload {
     }
 }
 
-
-
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HttpCallbackAckPayload {
     pub id: Option<String>,

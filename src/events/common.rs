@@ -15,7 +15,7 @@ pub enum MessageFrom {
     Group,
 }
 
-pub trait CommonMessage {
+pub trait CommonMessage: Sync {
     fn get_id(&self) -> &String;
     fn get_content(&self) -> &Option<String>;
     fn get_author_openid(&self) -> &String;

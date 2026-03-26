@@ -20,6 +20,7 @@ impl Parse for CommandArgs {
 pub fn command(args: TokenStream, input: TokenStream) -> TokenStream {
     let CommandArgs { prefix } = parse_macro_input!(args as CommandArgs);
     let func = parse_macro_input!(input as ItemFn);
+    let is_async = func.sig.asyncness.is_some();
     let fn_name = &func.sig.ident;
     let wrapper_name = format_ident!("__qqbot_sdk_command_wrapper_{}", fn_name);
 
@@ -46,13 +47,26 @@ pub fn command(args: TokenStream, input: TokenStream) -> TokenStream {
         }
     }
 
+    let invoke = if is_async {
+        quote! {
+            let result = #fn_name(#(#call_args),*).await;
+        }
+    } else {
+        quote! {
+            let result = #fn_name(#(#call_args),*);
+        }
+    };
+
     let expanded = quote! {
     #func
 
     const _: () = {
-        fn #wrapper_name(payload: &dyn qqbot_sdk::CommonMessage) {
-            #(#extracted_args)*
-            #fn_name(#(#call_args),*);
+        fn #wrapper_name<'a>(payload: &'a dyn qqbot_sdk::CommonMessage) -> qqbot_sdk::CommandHandleFuture<'a> {
+            ::std::boxed::Box::pin(async move {
+                #(#extracted_args)*
+                #invoke
+                qqbot_sdk::CommandOutput::into_output(result)
+            })
         }
 
         qqbot_sdk::inventory::submit! {

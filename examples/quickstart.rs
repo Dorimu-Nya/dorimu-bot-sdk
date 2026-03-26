@@ -1,5 +1,6 @@
-use qqbot_sdk::{run_application, CommonMessage};
+use qqbot_sdk::{run_application, CommonMessage, ReplyingMessage};
 use qqbot_sdk_macros::command;
+use qqbot_sdk::ReplyingMessage::Text;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -7,6 +8,6 @@ async fn main() -> std::io::Result<()> {
 }
 
 #[command("/ping")]
-fn asd(msg: Option<Vec<&str>>) {
-    println!("Hello, world!. {:?}", msg);
+fn asd(msg: Option<Vec<&str>>) -> ReplyingMessage {
+    Text(String::from("Pong!"))
 }

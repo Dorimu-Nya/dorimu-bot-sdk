@@ -14,14 +14,14 @@ mod signature;
 mod container;
 mod handler;
 mod macros;
-mod runner;
 mod replying;
+mod runner;
 
 pub use inventory;
 
 pub use crate::error::{Error, Result};
 pub use crate::event::{EventEnvelope, EventSchema};
-pub use crate::events::common::{FromCommonMessage, CommonMessage};
+pub use crate::events::common::{CommonMessage, FromCommonMessage};
 pub use crate::events::payload::DispatchPayload;
 
 pub use crate::http::{HttpClient, RetryPolicy};
@@ -43,4 +43,4 @@ pub use crate::signature::{
     ReplayProtectionMode, SignatureConfig, SignatureEncoding, SignatureVerifier,
 };
 
-pub use crate::macros::command::{CommandDef, CommandHandleFn};
+pub use crate::macros::command::{CommandDef, CommandHandleFn, CommandHandleFuture, CommandOutput};
