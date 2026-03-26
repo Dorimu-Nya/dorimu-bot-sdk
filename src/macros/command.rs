@@ -29,8 +29,7 @@ where
     E: Display + Send + Sync + 'static,
 {
     fn into_output(self) -> Result<Option<ReplyingMessage>, BoxDisplay> {
-        self.map(Some)
-            .map_err(|err| Box::new(err) as BoxDisplay)
+        self.map(Some).map_err(|err| Box::new(err) as BoxDisplay)
     }
 }
 

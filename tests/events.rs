@@ -1,6 +1,6 @@
 // // use qqbot_sdk::{EventData, EventType, TypedEvent};
 // use serde_json::json;
-// 
+//
 // // #[test]
 // // fn parse_c2c_message_event() {
 // //     let payload = json!({
@@ -40,7 +40,7 @@
 // //         other => panic!("unexpected event data: {other:?}"),
 // //     }
 // // }
-// 
+//
 // #[test]
 // fn parse_message_reaction_event() {
 //     let payload = json!({
@@ -54,10 +54,10 @@
 //             "emoji": { "id": "4", "type": 1 }
 //         }
 //     });
-// 
+//
 //     let event = TypedEvent::from_value(&payload).unwrap();
 //     assert_eq!(event.event_type, EventType::MessageReactionAdd);
-// 
+//
 //     match event.data {
 //         EventData::MessageReactionAdd(reaction) => {
 //             assert_eq!(reaction.user_id, "user_id_1");
@@ -66,7 +66,7 @@
 //         other => panic!("unexpected event data: {other:?}"),
 //     }
 // }
-// 
+//
 // #[test]
 // fn parse_interaction_event() {
 //     let payload = json!({
@@ -84,10 +84,10 @@
 //             }
 //         }
 //     });
-// 
+//
 //     let event = TypedEvent::from_value(&payload).unwrap();
 //     assert_eq!(event.event_type, EventType::InteractionCreate);
-// 
+//
 //     match event.data {
 //         EventData::InteractionCreate(interaction) => {
 //             assert_eq!(interaction.id, "interaction_id_1");
@@ -101,7 +101,7 @@
 //         other => panic!("unexpected event data: {other:?}"),
 //     }
 // }
-// 
+//
 // #[test]
 // fn parse_guild_member_event() {
 //     let payload = json!({
@@ -115,10 +115,10 @@
 //             "op_user_id": "op_1"
 //         }
 //     });
-// 
+//
 //     let event = TypedEvent::from_value(&payload).unwrap();
 //     assert_eq!(event.event_type, EventType::GuildMemberAdd);
-// 
+//
 //     match event.data {
 //         EventData::GuildMemberEvent(member_event) => {
 //             assert_eq!(member_event.member.guild_id.as_deref(), Some("guild_1"));
@@ -131,7 +131,7 @@
 //         other => panic!("unexpected event data: {other:?}"),
 //     }
 // }
-// 
+//
 // #[test]
 // fn parse_forum_thread_event() {
 //     let payload = json!({
@@ -148,10 +148,10 @@
 //             }
 //         }
 //     });
-// 
+//
 //     let event = TypedEvent::from_value(&payload).unwrap();
 //     assert_eq!(event.event_type, EventType::ForumThreadCreate);
-// 
+//
 //     match event.data {
 //         EventData::ForumThreadEvent(thread_event) => {
 //             assert_eq!(

@@ -58,25 +58,25 @@ pub fn command(args: TokenStream, input: TokenStream) -> TokenStream {
     };
 
     let expanded = quote! {
-    #func
+        #func
 
-    const _: () = {
-        fn #wrapper_name<'a>(payload: &'a dyn qqbot_sdk::CommonMessage) -> qqbot_sdk::CommandHandleFuture<'a> {
-            ::std::boxed::Box::pin(async move {
-                #(#extracted_args)*
-                #invoke
-                qqbot_sdk::CommandOutput::into_output(result)
-            })
-        }
-
-        qqbot_sdk::inventory::submit! {
-            qqbot_sdk::CommandDef {
-                prefix: #prefix,
-                handler: #wrapper_name
+        const _: () = {
+            fn #wrapper_name<'a>(payload: &'a dyn qqbot_sdk::CommonMessage) -> qqbot_sdk::CommandHandleFuture<'a> {
+                ::std::boxed::Box::pin(async move {
+                    #(#extracted_args)*
+                    #invoke
+                    qqbot_sdk::CommandOutput::into_output(result)
+                })
             }
-        }
+
+            qqbot_sdk::inventory::submit! {
+                qqbot_sdk::CommandDef {
+                    prefix: #prefix,
+                    handler: #wrapper_name
+                }
+            }
+        };
     };
-};
 
     expanded.into()
 }

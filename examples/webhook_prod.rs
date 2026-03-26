@@ -17,7 +17,7 @@
 // };
 // use tokio::sync::Mutex;
 // use tracing_subscriber::EnvFilter;
-// 
+//
 // #[derive(Clone)]
 // struct Config {
 //     host: String,
@@ -27,7 +27,7 @@
 //     app_id: String,
 //     client_secret: String,
 // }
-// 
+//
 // impl Config {
 //     fn from_env() -> Self {
 //         let host = env::var("QQ_HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
@@ -39,7 +39,7 @@
 //         let bot_secret = env::var("QQ_BOT_SECRET").expect("QQ_BOT_SECRET missing");
 //         let app_id = env::var("QQ_APP_ID").expect("QQ_APP_ID missing");
 //         let client_secret = env::var("QQ_CLIENT_SECRET").expect("QQ_CLIENT_SECRET missing");
-// 
+//
 //         Self {
 //             host,
 //             port,
@@ -50,9 +50,9 @@
 //         }
 //     }
 // }
-// 
+//
 // struct LoggingMiddleware;
-// 
+//
 // #[async_trait]
 // impl Middleware for LoggingMiddleware {
 //     async fn handle(&self, ctx: EventContext, next: Next) -> qqbot_sdk::Result<EventResponse> {
@@ -60,23 +60,23 @@
 //         next.run(ctx).await
 //     }
 // }
-// 
+//
 // async fn healthz() -> &'static str {
 //     "ok"
 // }
-// 
+//
 // async fn shutdown_signal() {
 //     let _ = tokio::signal::ctrl_c().await;
 //     tracing::info!("shutdown signal received");
 // }
-// 
+//
 // #[derive(Clone)]
 // struct Deduper {
 //     store: Arc<Mutex<HashMap<String, Instant>>>,
 //     ttl: Duration,
 //     cap: usize,
 // }
-// 
+//
 // impl Deduper {
 //     fn from_env() -> Self {
 //         let ttl = env::var("QQ_C2C_DEDUP_TTL_SECS")
@@ -93,7 +93,7 @@
 //             cap,
 //         }
 //     }
-// 
+//
 //     async fn is_duplicate(&self, key: &str) -> bool {
 //         if self.cap == 0 {
 //             return false;
@@ -117,7 +117,7 @@
 //         false
 //     }
 // }
-// 
+//
 // fn parse_keywords(raw: &str) -> Vec<String> {
 //     raw.split(|c: char| c == ',' || c == ';' || c.is_whitespace())
 //         .map(|s| s.trim())
@@ -125,7 +125,7 @@
 //         .map(|s| s.to_lowercase())
 //         .collect()
 // }
-// 
+//
 // fn matches_keywords(content: &str, keywords: &[String]) -> bool {
 //     if keywords.is_empty() {
 //         return true;
@@ -133,14 +133,14 @@
 //     let lower = content.to_lowercase();
 //     keywords.iter().any(|kw| lower.contains(kw))
 // }
-// 
+//
 // #[tokio::main]
 // async fn main() {
 //     let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
 //     tracing_subscriber::fmt().with_env_filter(filter).init();
-// 
+//
 //     let config = Config::from_env();
-// 
+//
 //     let verifier = SignatureVerifier::new(
 //         SignatureConfig::from_bot_secret(&config.bot_secret)
 //             .expect("invalid bot secret")
@@ -185,7 +185,7 @@
 //     } else {
 //         None
 //     };
-// 
+//
 //     let token_provider =
 //         HttpTokenProvider::from_env_or_official(&config.app_id, &config.client_secret);
 //     let token_manager = TokenManager::new(token_provider, Duration::from_secs(120));
@@ -197,7 +197,7 @@
 //     let c2c_reply_prefix = env::var("QQ_C2C_REPLY_PREFIX").unwrap_or_else(|_| "echo: ".to_string());
 //     let c2c_reply_keywords = parse_keywords(&env::var("QQ_C2C_REPLY_KEYWORDS").unwrap_or_default());
 //     let c2c_deduper = Deduper::from_env();
-// 
+//
 //     let router = EventRouter::new()
 //         .middleware(LoggingMiddleware)
 //         .route_fn("C2C_MESSAGE_CREATE", {
@@ -262,7 +262,7 @@
 //             }
 //         })
 //         .default_handler_fn(|_ctx| async move { Ok(EventResponse::ok()) });
-// 
+//
 //     let webhook = WebhookApp::new(
 //         router,
 //         WebhookConfig {
@@ -276,12 +276,12 @@
 //         },
 //     )
 //     .into_router();
-// 
+//
 //     let app = Router::new().route("/healthz", get(healthz)).merge(webhook);
-// 
+//
 //     let addr: SocketAddr = format!("{}:{}", config.host, config.port).parse().unwrap();
 //     tracing::info!(%addr, "listening");
-// 
+//
 //     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
 //     axum::serve(listener, app)
 //         .with_graceful_shutdown(shutdown_signal())

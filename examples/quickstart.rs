@@ -1,6 +1,6 @@
+use qqbot_sdk::ReplyingMessage::Text;
 use qqbot_sdk::{run_application, CommonMessage, ReplyingMessage};
 use qqbot_sdk_macros::command;
-use qqbot_sdk::ReplyingMessage::Text;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
