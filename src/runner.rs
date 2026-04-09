@@ -3,6 +3,10 @@ use crate::handler::{dispatch_event, handle_address_verify};
 use axum::response::IntoResponse;
 use axum::routing::any;
 use axum::{Json, Router};
+use crate::config::AppConfig;
+use std::sync::OnceLock;
+
+static GLOBAL_CONFIG: OnceLock<AppConfig> = OnceLock::new();
 
 /// 启动QQBot程序
 ///
@@ -12,18 +16,28 @@ use axum::{Json, Router};
 ///
 /// #[tokio::main]
 /// async fn main() -> std::io::Result<()> {
-///     run_application().await
+///     let config = AppConfig {
+///         credential: CredentialConfig {
+///             app_id: "YOUR APP ID".to_string(),
+///             secret: "YOUR SECRET".to_string(),
+///         },
+///         ..Default::default()
+///     };
+///     run_application(config).await
 /// }
 /// ```
-/// TODO: 接收项目的参数，如监听端口等
-pub async fn run_application() -> std::io::Result<()> {
+pub async fn run_application(config: AppConfig) -> std::io::Result<()> {
     tracing_subscriber::fmt::init();
+    
+    let app = Router::new().route(&config.listening.webhook_path, any(webhook_handler));
 
-    let app = Router::new().route("/webhook", any(webhook_handler));
-
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
+    let listener = tokio::net::TcpListener::bind(&config.listening.bind_addr).await?;
+    
+    GLOBAL_CONFIG.set(config).ok();
     axum::serve(listener, app).await
 }
+
+// TODO: 存储像openapi客户端等其他实例，考虑要不要把这些处理方法重构成到一个实体对象里
 
 // webhook的第一层的对t字段的处理
 async fn webhook_handler(Json(payload): Json<WebhookPayload>) -> impl IntoResponse {

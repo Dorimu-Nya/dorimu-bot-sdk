@@ -2,6 +2,7 @@
 
 extern crate self as qqbot_sdk;
 
+pub mod config;
 mod error;
 mod event;
 mod events;
@@ -44,3 +45,4 @@ pub use crate::signature::{
 };
 
 pub use crate::macros::command::{CommandDef, CommandHandleFn, CommandHandleFuture, CommandOutput};
+pub use crate::config::{AppConfig, CredentialConfig, ListeningConfig};
