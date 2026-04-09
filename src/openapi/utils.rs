@@ -1,6 +1,8 @@
 use crate::{Error, Result};
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 
+/// sheip9 (2026/4/9): wtf这是我写的吗？哦是ai写的，该天应该要铲一下，感觉没吊用又看不懂，看了下是给openAPI 部分服务的，本来应该移进去的
+
 /// 拼接 base URL 与 API path。
 pub(crate) fn join_url(base: &str, path: &str) -> String {
     let base = base.trim_end_matches('/');

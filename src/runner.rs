@@ -4,6 +4,18 @@ use axum::response::IntoResponse;
 use axum::routing::any;
 use axum::{Json, Router};
 
+/// 启动QQBot程序
+///
+/// example:
+/// ```rust
+/// use qqbot_sdk_rs::runner::run_application;
+///
+/// #[tokio::main]
+/// async fn main() -> std::io::Result<()> {
+///     run_application().await
+/// }
+/// ```
+/// TODO: 接收项目的参数，如监听端口等
 pub async fn run_application() -> std::io::Result<()> {
     tracing_subscriber::fmt::init();
 
@@ -13,6 +25,7 @@ pub async fn run_application() -> std::io::Result<()> {
     axum::serve(listener, app).await
 }
 
+// webhook的第一层的对t字段的处理
 async fn webhook_handler(Json(payload): Json<WebhookPayload>) -> impl IntoResponse {
     match payload {
         WebhookPayload::Dispatch(payload) => {

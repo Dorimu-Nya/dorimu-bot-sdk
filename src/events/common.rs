@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+// 放一些各个事件通用的模型
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Attachment {
     pub content_type: Option<String>,
@@ -15,6 +17,7 @@ pub enum MessageFrom {
     Group,
 }
 
+// 对c2c和群组的消息的简单封装抽象
 pub trait CommonMessage: Sync {
     fn get_id(&self) -> &String;
     fn get_content(&self) -> &Option<String>;
@@ -27,6 +30,7 @@ pub trait CommonMessage: Sync {
         Self: Sized;
 }
 
+/// CommonMessage 的转换 trait， 用于在处理command宏的时候的转换
 pub trait FromCommonMessage<'a>: Sized {
     fn from(req: &'a dyn CommonMessage) -> Self;
 }

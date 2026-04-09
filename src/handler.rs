@@ -8,9 +8,8 @@ use super::events::payload::DispatchPayload;
 use super::events::validation::{ValidationRequest, ValidationResponse};
 use crate::container::COMMANDS;
 use crate::events::common::CommonMessage;
-use crate::macros::command::BoxDisplay;
-use crate::ReplyingMessage;
 
+/// 处理腾讯端请求签名校验
 pub fn handle_address_verify(
     req: ValidationRequest,
 ) -> Result<ValidationResponse, Box<dyn std::error::Error>> {
@@ -21,6 +20,7 @@ pub fn handle_address_verify(
     })
 }
 
+/// 当webhook opcode为0时，处理事件分发
 pub async fn dispatch_event(payload: DispatchPayload) {
     match &payload.event {
         EventType::C2cEventType(event) => matching_c2c_event(event, &payload).await,
@@ -31,8 +31,10 @@ pub async fn dispatch_event(payload: DispatchPayload) {
     }
 }
 
+/// 处理 C2C 事件...
 async fn matching_c2c_event(event: &C2cEventType, payload: &DispatchPayload) {
     match event {
+        // sheip9(2026/4/9): 设想的处理逻辑是 先调用c2c专属的command（下方群组消息相关同理），若无再查找通用的command，若无对应的command，则广播到任何监听消息事件的方法，现在只实现了通用command, 后续再慢慢迭代
         C2cEventType::C2cMessageCreate(message) => handle_messaging(message, payload).await,
         C2cEventType::FriendAdd(_) => {}
         C2cEventType::FriendDel(_) => {}
@@ -41,6 +43,7 @@ async fn matching_c2c_event(event: &C2cEventType, payload: &DispatchPayload) {
     }
 }
 
+/// 处理群事件...
 async fn matching_group_event(event: &GroupEventType, payload: &DispatchPayload) {
     match event {
         GroupEventType::GroupAtMessageCreate(message) => handle_messaging(message, payload).await,
@@ -52,6 +55,7 @@ async fn matching_group_event(event: &GroupEventType, payload: &DispatchPayload)
     }
 }
 
+/// 处理频道事件...
 async fn matching_guild_event(event: &GuildEventType, _payload: &DispatchPayload) {
     match event {
         GuildEventType::AtMessageCreate(_message) => {}
@@ -87,12 +91,14 @@ async fn matching_guild_event(event: &GuildEventType, _payload: &DispatchPayload
     }
 }
 
+/// 处理交互事件...
 async fn matching_interaction_event(event: &InteractionEventType) {
     match event {
         InteractionEventType::InteractionCreate(_) => {}
     }
 }
 
+/// 处理消息反应事件...
 async fn matching_message_reaction_event(event: &MessageReactionEventType) {
     match event {
         MessageReactionEventType::MessageReactionAdd(_) => {}
@@ -100,6 +106,7 @@ async fn matching_message_reaction_event(event: &MessageReactionEventType) {
     }
 }
 
+/// 处理消息指令等
 async fn handle_messaging(message: &impl CommonMessage, _payload: &DispatchPayload) {
     match message.get_content() {
         None => {}
