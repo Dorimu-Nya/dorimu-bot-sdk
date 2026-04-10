@@ -8,6 +8,13 @@ use std::{
 };
 use tracing::warn;
 
+// sheip9(2026/4/10): 都是ai写的，反正能跑，可读性应该不是很重要，没问题就不管他了
+// 使用exmaple:
+// 
+// ```
+// crate::signature::sign_webhook_validation(botsecret, &req.event_ts, &req.plain_token)?;
+// ```
+
 /// 签名字符串的解码方式。
 #[derive(Debug, Clone)]
 pub enum SignatureEncoding {
