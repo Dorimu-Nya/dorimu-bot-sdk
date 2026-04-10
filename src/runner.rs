@@ -1,13 +1,9 @@
+use crate::app::App;
+use crate::config::AppConfig;
 use crate::events::payload::WebhookPayload;
-use crate::handler::{dispatch_event, handle_address_verify};
-use axum::response::IntoResponse;
 use axum::routing::any;
 use axum::{Json, Router};
-use crate::config::AppConfig;
-use std::sync::OnceLock;
-
-static GLOBAL_CONFIG: OnceLock<AppConfig> = OnceLock::new();
-
+use std::sync::Arc;
 /// 启动QQBot程序
 ///
 /// example:
@@ -28,27 +24,23 @@ static GLOBAL_CONFIG: OnceLock<AppConfig> = OnceLock::new();
 /// ```
 pub async fn run_application(config: AppConfig) -> std::io::Result<()> {
     tracing_subscriber::fmt::init();
-    
-    let app = Router::new().route(&config.listening.webhook_path, any(webhook_handler));
 
-    let listener = tokio::net::TcpListener::bind(&config.listening.bind_addr).await?;
-    
-    GLOBAL_CONFIG.set(config).ok();
-    axum::serve(listener, app).await
-}
+    let webhook_path = config.listening.webhook_path.clone();
+    let bind_addr = config.listening.bind_addr.clone();
 
-// TODO: 存储像openapi客户端等其他实例，考虑要不要把这些处理方法重构成到一个实体对象里
+    let app = Arc::new(App::new(config));
+    let router = Router::new().route(
+        &webhook_path,
+        any({
+            let app = Arc::clone(&app);
+            move |Json(payload): Json<WebhookPayload>| {
+                let app = Arc::clone(&app);
+                async move { app.webhook_handler(payload).await }
+            }
+        }),
+    );
 
-// webhook的第一层的对t字段的处理
-async fn webhook_handler(Json(payload): Json<WebhookPayload>) -> impl IntoResponse {
-    match payload {
-        WebhookPayload::Dispatch(payload) => {
-            dispatch_event(payload).await;
-            ().into_response()
-        }
-        WebhookPayload::HttpCallbackAck(_) => ().into_response(),
-        WebhookPayload::WebhookAddressVerify(payload) => {
-            Json(handle_address_verify(payload.d).unwrap()).into_response()
-        }
-    }
+    let listener = tokio::net::TcpListener::bind(&bind_addr).await?;
+
+    axum::serve(listener, router).await
 }

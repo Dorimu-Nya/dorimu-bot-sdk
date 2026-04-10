@@ -3,6 +3,7 @@
 extern crate self as qqbot_sdk;
 
 pub mod config;
+pub mod app;
 mod error;
 mod event;
 mod events;
