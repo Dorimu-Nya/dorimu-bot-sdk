@@ -10,9 +10,10 @@ use crate::app::App;
 use crate::container::COMMANDS;
 use crate::events::common::CommonMessage;
 use crate::events::payload::WebhookPayload;
+use crate::ReplyingMessage;
 use axum::response::IntoResponse;
 use axum::Json;
-
+use serde_json::json;
 impl App {
     // webhook的第一层的对t字段的处理
     pub async fn webhook_handler(&self, payload: WebhookPayload) -> impl IntoResponse {
@@ -62,7 +63,22 @@ impl App {
         match event {
             // sheip9(2026/4/9): 设想的处理逻辑是 先调用c2c专属的command（下方群组消息相关同理），若无再查找通用的command，若无对应的command，则广播到任何监听消息事件的方法，现在只实现了通用command, 后续再慢慢迭代
             C2cEventType::C2cMessageCreate(message) => {
-                self.handle_messaging(message, payload).await
+                let reply = self.handle_messaging(message, payload).await;
+                if let Some(reply) = reply {
+                    // todo: 手写对象不靠谱，还是要重构下openapi
+                    let body = json!({
+                        "msg_id": message.id,
+                        "msg_seq": message.msg_seq.unwrap_or(1),
+                        "msg_type": reply.to_msg_type(),
+                        "content": reply,
+                    });
+                    reply.to_msg_type();
+
+                    let _ = self.get_api_client()
+                        .c2c_messages()
+                        .send(&message.author.user_openid, &body)
+                        .await;
+                }
             }
             C2cEventType::FriendAdd(_) => {}
             C2cEventType::FriendDel(_) => {}
@@ -75,7 +91,22 @@ impl App {
     async fn matching_group_event(&self, event: &GroupEventType, payload: &DispatchPayload) {
         match event {
             GroupEventType::GroupAtMessageCreate(message) => {
-                self.handle_messaging(message, payload).await
+                let reply = self.handle_messaging(message, payload).await;
+                if let Some(reply) = reply {
+                    let body = json!({
+                        "msg_id": message.id,
+                        "msg_seq": message.msg_seq.unwrap_or(1),
+                        "msg_type": reply.to_msg_type(),
+                        "content": reply,
+                    });
+                    reply.to_msg_type();
+
+                    // TODO: openapi部分缺了群组的api
+                    // let _ = self.get_api_client()
+                    //     .
+                    //     .send(&message.author.member_openid, &body)
+                    //     .await;
+                }
             }
             GroupEventType::GroupAddRobot(_) => {}
             GroupEventType::GroupDelRobot(_) => {}
@@ -137,21 +168,23 @@ impl App {
     }
 
     /// 处理消息指令等
-    async fn handle_messaging(&self, message: &impl CommonMessage, _payload: &DispatchPayload) {
+    async fn handle_messaging(
+        &self,
+        message: &impl CommonMessage,
+        _payload: &DispatchPayload,
+    ) -> Option<ReplyingMessage> {
         match message.get_content() {
-            None => {}
+            None => None,
             Some(msg) => {
                 let result: Vec<&str> = msg.split_whitespace().collect();
                 if let Some(command_fn) = result.get(0).and_then(|cmd| COMMANDS.get(cmd)) {
                     let res = command_fn(message).await;
                     match res {
-                        Ok(reply) => {
-                            if let Some(_reply) = reply {
-                                //TODO openapi client发送消息
-                            }
-                        }
-                        Err(_) => {}
+                        Ok(reply) => reply,
+                        Err(_) => None,
                     }
+                } else {
+                    None
                 }
             }
         }

@@ -57,6 +57,7 @@ pub enum ReplyingType {
     Group,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ReplyingMessage {
     Text(String),
     Markdown(ReplyingMarkdown),
