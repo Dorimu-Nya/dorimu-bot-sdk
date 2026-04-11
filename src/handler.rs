@@ -18,6 +18,7 @@ use tracing::{debug, error, warn};
 
 impl App {
     // webhook的第一层的对t字段的处理
+    // todo: 这一块应该抛掉对axum的依赖
     pub async fn webhook_handler(&self, payload: WebhookPayload) -> impl IntoResponse {
         debug!("收到Webhook事件: {:?}", payload);
         match payload {
