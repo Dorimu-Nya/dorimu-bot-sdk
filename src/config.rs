@@ -33,6 +33,33 @@ impl Default for CredentialConfig {
     }
 }
 
+#[derive(Clone)]
+pub struct SandboxConfig {
+    // TODO: 这里应该是放一些沙箱里的openid什么的
+}
+
+impl Default for SandboxConfig {
+    fn default() -> Self {
+        Self {  }
+    }
+}
+
+/// qqbot api地址覆盖配置
+#[derive(Clone)]
+pub struct QQApiOverrides {
+    pub prod_url_override: Option<String>,
+    pub sandbox_url_override: Option<String>,
+}
+
+impl Default for QQApiOverrides {
+    fn default() -> Self {
+        Self {
+            prod_url_override: None,
+            sandbox_url_override: None,
+        }
+    }
+}
+
 /// 应用配置
 #[derive(Clone)]
 pub struct AppConfig {
@@ -40,6 +67,10 @@ pub struct AppConfig {
     pub listening: ListeningConfig,
     /// qqbot票据配置
     pub credential: CredentialConfig,
+    /// 沙箱配置
+    pub sandbox_config: SandboxConfig,
+    /// api地址覆写
+    pub api_overrides: QQApiOverrides,
 }
 
 impl Default for AppConfig {
@@ -47,6 +78,8 @@ impl Default for AppConfig {
         Self {
             listening: Default::default(),
             credential: Default::default(),
+            sandbox_config: Default::default(),
+            api_overrides: Default::default(),
         }
     }
 }

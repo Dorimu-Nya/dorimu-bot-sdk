@@ -14,9 +14,12 @@ use crate::ReplyingMessage;
 use axum::response::IntoResponse;
 use axum::Json;
 use serde_json::json;
+use tracing::{debug, error, warn};
+
 impl App {
     // webhook的第一层的对t字段的处理
     pub async fn webhook_handler(&self, payload: WebhookPayload) -> impl IntoResponse {
+        debug!("收到Webhook事件: {:?}", payload);
         match payload {
             WebhookPayload::Dispatch(payload) => {
                 self.dispatch_event(payload).await;
@@ -72,9 +75,9 @@ impl App {
                         "msg_type": reply.to_msg_type(),
                         "content": reply,
                     });
-                    reply.to_msg_type();
 
-                    let _ = self.get_api_client()
+                    let _ = self
+                        .get_prod_client()
                         .c2c_messages()
                         .send(&message.author.user_openid, &body)
                         .await;
@@ -99,7 +102,6 @@ impl App {
                         "msg_type": reply.to_msg_type(),
                         "content": reply,
                     });
-                    reply.to_msg_type();
 
                     // TODO: openapi部分缺了群组的api
                     // let _ = self.get_api_client()
@@ -181,9 +183,13 @@ impl App {
                     let res = command_fn(message).await;
                     match res {
                         Ok(reply) => reply,
-                        Err(_) => None,
+                        Err(err) => {
+                            error!("处理指令{}出错: {}", msg, err);
+                            None
+                        },
                     }
                 } else {
+                    warn!("未知指令: {}", msg);
                     None
                 }
             }

@@ -11,7 +11,7 @@ use std::time::Duration;
 #[derive(Clone)]
 pub struct App {
     pub config: AppConfig,
-    api_client: Arc<OpenApi<HttpTokenProvider>>,
+    prod_api_client: Arc<OpenApi<HttpTokenProvider>>,
 }
 
 impl App {
@@ -21,16 +21,20 @@ impl App {
             &config.credential.secret,
         );
         let token_manager = TokenManager::new(token_provider, Duration::from_secs(120));
-        let client = OpenApiClient::new(token_manager, OpenApiConfig::from_env_or_official());
+        let mut openapi_config = OpenApiConfig::official();
+        if let Some(url) = &config.api_overrides.prod_url_override {
+            openapi_config.base_url = url.clone();
+        }
+        let client = OpenApiClient::new(token_manager, openapi_config);
         let api = OpenApi::new(client, OpenApiPaths::official_defaults());
 
         Self {
             config,
-            api_client: Arc::new(api),
+            prod_api_client: Arc::new(api),
         }
     }
 
-    pub fn get_api_client(&self) -> Arc<OpenApi<HttpTokenProvider>> {
-        Arc::clone(&self.api_client)
+    pub fn get_prod_client(&self) -> Arc<OpenApi<HttpTokenProvider>> {
+        Arc::clone(&self.prod_api_client)
     }
 }
