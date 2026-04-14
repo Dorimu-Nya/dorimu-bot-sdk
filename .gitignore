@@ -12,3 +12,4 @@ bot_app.err.log
 /data/
 **/data/
 *.exe
+.idea/
