@@ -1,6 +1,8 @@
 mod apis;
 mod client;
 mod config;
+pub mod error;
+pub mod http;
 mod token;
 mod utils;
 

@@ -1,19 +1,18 @@
-use crate::config::AppConfig;
-use crate::context::ContextStore;
-use crate::HttpTokenProvider;
-use crate::OpenApi;
-use crate::OpenApiClient;
-use crate::OpenApiConfig;
-use crate::OpenApiPaths;
-use crate::TokenManager;
+use super::AppConfig;
+use super::ContextStore;
+use crate::openapi::{
+    HttpTokenProvider, OpenApi, OpenApiClient, OpenApiConfig, OpenApiPaths, TokenManager,
+};
 use std::sync::Arc;
 use std::time::Duration;
+use crate::app::commands::CommandsStore;
 
 #[derive(Clone)]
 pub struct App {
     pub config: AppConfig,
     prod_api_client: Arc<OpenApi<HttpTokenProvider>>,
     pub dependency_container: ContextStore,
+    pub commands: CommandsStore,
 }
 
 impl App {
@@ -39,6 +38,7 @@ impl App {
             config,
             prod_api_client: Arc::new(api),
             dependency_container: container,
+            commands: CommandsStore::new(),
         }
     }
 

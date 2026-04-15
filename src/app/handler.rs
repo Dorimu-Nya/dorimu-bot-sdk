@@ -1,18 +1,17 @@
-use super::events::c2c::event_type::C2cEventType;
-use super::events::event_type::EventType;
-use super::events::group::event_type::GroupEventType;
-use super::events::guild::event_type::GuildEventType;
-use super::events::interaction::event_type::InteractionEventType;
-use super::events::message_reaction::event_type::MessageReactionEventType;
-use super::events::payload::DispatchPayload;
-use super::events::validation::{ValidationRequest, ValidationResponse};
-use crate::app::App;
-use crate::container::COMMANDS;
+use super::App;
+use crate::events::c2c::event_type::C2cEventType;
 use crate::events::common::CommonMessage;
+use crate::events::event_type::EventType;
+use crate::events::group::event_type::GroupEventType;
+use crate::events::guild::event_type::GuildEventType;
+use crate::events::interaction::event_type::InteractionEventType;
+use crate::events::message_reaction::event_type::MessageReactionEventType;
+use crate::events::payload::DispatchPayload;
 use crate::events::payload::WebhookPayload;
-use crate::ReplyingMessage;
+use crate::events::validation::{ValidationRequest, ValidationResponse};
 use serde_json::json;
 use tracing::{debug, error, warn};
+use crate::commands::replying::ReplyingMessage;
 
 impl App {
     // webhook的第一层的对t字段的处理
@@ -95,7 +94,7 @@ impl App {
             GroupEventType::GroupAtMessageCreate(message) => {
                 let reply = self.handle_messaging(message, payload).await;
                 if let Some(reply) = reply {
-                    let body = json!({
+                    let _body = json!({
                         "msg_id": message.id,
                         "msg_seq": message.msg_seq.unwrap_or(1),
                         "msg_type": reply.to_msg_type(),
@@ -184,7 +183,7 @@ impl App {
             None => None,
             Some(msg) => {
                 let result: Vec<&str> = msg.split_whitespace().collect();
-                if let Some(command_fn) = result.get(0).and_then(|cmd| COMMANDS.get(cmd)) {
+                if let Some(command_fn) = result.get(0).and_then(|cmd| self.commands.get(cmd)) {
                     let container = &self.dependency_container;
 
                     // 调用命令处理函数，传递消息和容器

@@ -2,54 +2,41 @@
 
 extern crate self as qqbot_sdk;
 
-pub mod app;
-pub mod config;
-mod error;
-mod event;
+#[cfg(feature = "events")]
 mod events;
-mod http;
-mod middleware;
-mod openapi;
-mod router;
-mod signature;
-
-mod container;
-pub mod context;
-mod handler;
-mod macros;
-mod replying;
-mod runner;
-
-pub use inventory;
-
-pub use crate::error::{Error, Result};
-pub use crate::event::{EventEnvelope, EventSchema};
 pub use crate::events::common::{CommonMessage, FromCommonMessage};
 pub use crate::events::payload::DispatchPayload;
 
-pub use crate::http::{HttpClient, RetryPolicy};
-
-pub use crate::openapi::{
+#[cfg(feature = "openapi")]
+pub mod openapi;
+pub use openapi::error::{Error, Result};
+pub use openapi::http::{HttpClient, RetryPolicy};
+pub use openapi::{
     AnnouncesApi, ApiPermissionsApi, AuthConfig, C2cMessagesApi, ChannelPermissionsApi,
     ChannelsApi, ForumsApi, GuildsApi, HttpTokenProvider, InteractionsApi, MembersApi,
     MessageSettingsApi, MuteApi, OpenApi, OpenApiClient, OpenApiConfig, OpenApiPaths, PinsApi,
     ReactionsApi, RolesApi, SchedulesApi, TokenManager, TokenProvider, UsersApi,
 };
-pub use crate::replying::{
-    ReplyingArk, ReplyingArkKv, ReplyingEmbed, ReplyingEmbedField, ReplyingEmbedThumbnail,
-    ReplyingMarkdown, ReplyingMarkdownParam, ReplyingMedia, ReplyingMessage, ReplyingType,
-};
 
-pub use crate::runner::run_application;
-pub use crate::signature::{
-    public_key_from_bot_secret, sign_webhook_validation, ReplayProtectionConfig,
-    ReplayProtectionMode, SignatureConfig, SignatureEncoding, SignatureVerifier,
-};
+#[cfg(feature = "signature")]
+pub mod signature;
+pub use signature::sign_webhook_validation;
 
-pub use crate::app::App;
-pub use crate::config::{AppConfig, CredentialConfig, ListeningConfig};
+#[cfg(feature = "app")]
+pub mod app;
+pub mod context;
+pub mod commands;
+pub use commands::defining::{CommandDef, CommandHandleFn, CommandHandleFuture, CommandOutput};
+pub use commands::replying::{ReplyingType, ReplyingMedia, ReplyingMarkdown, ReplyingMarkdownParam, ReplyingEmbed, ReplyingEmbedField, ReplyingEmbedThumbnail, ReplyingArk, ReplyingArkKv, ReplyingMessage};
+pub use app::config::{AppConfig, CredentialConfig, SandboxConfig, ListeningConfig};
 
-pub use crate::context::{Context, ContextStore};
-pub use crate::macros::command::{
-    CommandDef, CommandHandleFn, CommandHandleFuture, CommandOutput,
-};
+#[cfg(feature = "macros")]
+pub use context::ContextStore;
+#[cfg(feature = "macros")]
+pub use inventory;
+
+#[cfg(feature = "axum-runner")]
+pub mod axum;
+pub use axum::runner::{run_application, run_application_with_router};
+
+pub use context::Context;

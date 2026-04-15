@@ -40,7 +40,7 @@ pub struct SandboxConfig {
 
 impl Default for SandboxConfig {
     fn default() -> Self {
-        Self {  }
+        Self {}
     }
 }
 
@@ -71,6 +71,8 @@ pub struct AppConfig {
     pub sandbox_config: SandboxConfig,
     /// api地址覆写
     pub api_overrides: QQApiOverrides,
+    /// 启动时检查，包括上下文检查，指令是否重复等
+    pub ignore_checking: bool,
 }
 
 impl Default for AppConfig {
@@ -80,6 +82,7 @@ impl Default for AppConfig {
             credential: Default::default(),
             sandbox_config: Default::default(),
             api_overrides: Default::default(),
+            ignore_checking: false,
         }
     }
 }

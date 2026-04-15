@@ -1,10 +1,10 @@
 use crate::app::App;
-use crate::config::AppConfig;
 use crate::events::payload::WebhookPayload;
 use axum::routing::{any};
 use axum::{Json, Router};
 use std::sync::Arc;
 use tracing::info;
+use crate::AppConfig;
 
 /// 启动QQBot程序
 ///

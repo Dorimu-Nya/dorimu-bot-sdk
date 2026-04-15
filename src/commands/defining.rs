@@ -1,5 +1,6 @@
 use crate::context::ContextStore;
-use crate::{events::common::CommonMessage, replying::ReplyingMessage};
+use crate::commands::replying::ReplyingMessage;
+use crate::events::common::CommonMessage;
 use std::{fmt::Display, future::Future, pin::Pin};
 
 // 错误的封装
@@ -60,4 +61,5 @@ pub struct CommandDef {
     pub handler: CommandHandleFn,
 }
 
+#[cfg(feature = "macros")]
 inventory::collect!(CommandDef);
