@@ -9,8 +9,7 @@ use tracing::info;
 ///
 /// example:
 /// ```rust
-/// use qqbot_sdk_rs::runner::run_application;
-///
+/// use qqbot_sdk::{run_application, AppConfig, CredentialConfig};
 /// #[tokio::main]
 /// async fn main() -> std::io::Result<()> {
 ///     let config = AppConfig {
