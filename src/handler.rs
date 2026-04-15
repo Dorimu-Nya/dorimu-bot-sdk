@@ -11,8 +11,6 @@ use crate::container::COMMANDS;
 use crate::events::common::CommonMessage;
 use crate::events::payload::WebhookPayload;
 use crate::ReplyingMessage;
-use axum::response::IntoResponse;
-use axum::Json;
 use serde_json::json;
 use tracing::{debug, error, warn};
 
@@ -171,6 +169,12 @@ impl App {
     }
 
     /// 处理消息指令等
+    ///
+    /// 这个方法会：
+    /// 1. 解析消息内容，提取命令
+    /// 2. 从命令表中查找对应的处理函数
+    /// 3. 创建依赖容器并传递给命令处理函数
+    /// 4. 执行命令并返回回复消息
     async fn handle_messaging(
         &self,
         message: &impl CommonMessage,
@@ -181,13 +185,16 @@ impl App {
             Some(msg) => {
                 let result: Vec<&str> = msg.split_whitespace().collect();
                 if let Some(command_fn) = result.get(0).and_then(|cmd| COMMANDS.get(cmd)) {
-                    let res = command_fn(message).await;
+                    let container = &self.dependency_container;
+
+                    // 调用命令处理函数，传递消息和容器
+                    let res = command_fn(message, container).await;
                     match res {
                         Ok(reply) => reply,
                         Err(err) => {
                             error!("处理指令{}出错: {}", msg, err);
                             None
-                        },
+                        }
                     }
                 } else {
                     warn!("未知指令: {}", msg);

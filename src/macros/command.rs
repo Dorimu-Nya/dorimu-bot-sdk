@@ -1,3 +1,4 @@
+use crate::context::ContextStore;
 use crate::{events::common::CommonMessage, replying::ReplyingMessage};
 use std::{fmt::Display, future::Future, pin::Pin};
 
@@ -9,7 +10,11 @@ pub type BoxDisplay = Box<dyn Display + Send + Sync>;
 pub type CommandHandleFuture<'a> =
     Pin<Box<dyn Future<Output = Result<Option<ReplyingMessage>, BoxDisplay>> + Send + 'a>>;
 
-pub type CommandHandleFn = for<'a> fn(&'a dyn CommonMessage) -> CommandHandleFuture<'a>;
+/// 命令处理函数类型
+///
+/// 接收消息和依赖容器，返回异步的命令处理结果
+pub type CommandHandleFn =
+    for<'a> fn(&'a dyn CommonMessage, &'a ContextStore) -> CommandHandleFuture<'a>;
 
 /// 输出的统一转换trait
 pub trait CommandOutput {
