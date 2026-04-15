@@ -18,17 +18,17 @@ use tracing::{debug, error, warn};
 
 impl App {
     // webhook的第一层的对t字段的处理
-    // todo: 这一块应该抛掉对axum的依赖
-    pub async fn webhook_handler(&self, payload: WebhookPayload) -> impl IntoResponse {
+    pub async fn webhook_handler(&self, payload: WebhookPayload) -> Option<ValidationResponse> {
         debug!("收到Webhook事件: {:?}", payload);
         match payload {
             WebhookPayload::Dispatch(payload) => {
                 self.dispatch_event(payload).await;
-                ().into_response()
+                None
             }
-            WebhookPayload::HttpCallbackAck(_) => ().into_response(),
+            WebhookPayload::HttpCallbackAck(_) => None,
             WebhookPayload::WebhookAddressVerify(payload) => {
-                Json(self.handle_address_verify(payload.d).unwrap()).into_response()
+                let res = self.handle_address_verify(payload.d).unwrap();
+                Some(res)
             }
         }
     }
