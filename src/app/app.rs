@@ -5,7 +5,7 @@ use crate::openapi::{
 };
 use std::sync::Arc;
 use std::time::Duration;
-use crate::app::commands::CommandsStore;
+use super::commands::store::CommandsStore;
 
 #[derive(Clone)]
 pub struct App {

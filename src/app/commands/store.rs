@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::sync::Arc;
-use qqbot_sdk::commands::defining::{CommandDef, CommandHandleFn};
+use crate::app::commands::defining::{CommandDef, CommandHandleFn};
 
 #[derive(Clone)]
 pub struct CommandsStore {

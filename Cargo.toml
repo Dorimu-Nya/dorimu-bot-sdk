@@ -12,7 +12,7 @@ events = []
 openapi = []
 signature = []
 app = ["events", "openapi", "signature"]
-macros = ["dep:qqbot_sdk_macros", "dep:inventory"]
+macros = ["dep:qqbot_sdk_macros", "dep:inventory", "app"]
 axum-runner = ["app", "dep:axum"]
 full = ["app", "macros", "axum-runner"]
 
