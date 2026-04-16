@@ -59,6 +59,13 @@ impl ContextStore {
             .insert(TypeId::of::<T>(), Arc::new(value))
     }
 
+    pub fn insert_arc<T: Any + Send + Sync>(&self, value: Arc<T>) -> Option<Arc<dyn Any + Send + Sync>> {
+        self.dependencies
+            .write()
+            .unwrap()
+            .insert(TypeId::of::<T>(), value)
+    }
+
     pub fn get<T: 'static + Send + Sync>(&self) -> Arc<T> {
         let map = self.dependencies.read().unwrap();
 
@@ -69,7 +76,7 @@ impl ContextStore {
             )
         });
 
-        value.clone().downcast::<T>().unwrap_or_else(|_| {
+        Arc::downcast::<T>(value.clone()).unwrap_or_else(|_| {
             panic!(
                 "ContextStore: type mismatch when downcasting {}",
                 std::any::type_name::<T>()

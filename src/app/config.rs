@@ -119,7 +119,7 @@ impl AppConfig {
 
     pub fn with_context<T: Any + Send + Sync + 'static>(mut self, context: Context<T>) -> Self {
         self.contexts.push(Box::new(move |store: &ContextStore| {
-            let _ = store.insert(context.clone());
+            let _ = store.insert_arc(context.as_arc());
         }));
         self
     }
