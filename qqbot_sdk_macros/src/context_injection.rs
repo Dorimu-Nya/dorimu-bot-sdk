@@ -22,7 +22,7 @@ pub fn extract_context_inner_type(ty: &Type) -> Option<Type> {
 /// 封装 Context形参
 pub fn quoting_context_param(inner_type: Type) -> proc_macro2::TokenStream {
     quote! {
-        qqbot_sdk::Context(__store.get::<#inner_type>())
+        __store.get_context::<#inner_type>()
     }
 }
 

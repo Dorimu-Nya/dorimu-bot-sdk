@@ -36,7 +36,7 @@ impl App {
         req: ValidationRequest,
     ) -> Result<ValidationResponse, Box<dyn std::error::Error>> {
         let signature = crate::signature::sign_webhook_validation(
-            &self.config.credential.secret,
+            &self.credential.secret,
             &req.event_ts,
             &req.plain_token,
         )?;

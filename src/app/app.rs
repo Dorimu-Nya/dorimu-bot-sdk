@@ -5,11 +5,12 @@ use crate::openapi::{
 };
 use std::sync::Arc;
 use std::time::Duration;
+use crate::CredentialConfig;
 use super::commands::store::CommandsStore;
 
 #[derive(Clone)]
 pub struct App {
-    pub config: AppConfig,
+    pub credential: CredentialConfig,
     prod_api_client: Arc<OpenApi<HttpTokenProvider>>,
     pub dependency_container: ContextStore,
     pub commands: CommandsStore,
@@ -34,8 +35,12 @@ impl App {
         // 初始化ioc
         let container = ContextStore::new();
 
+        for register in &config.contexts {
+            register(&container);
+        }
+
         Self {
-            config,
+            credential: config.credential,
             prod_api_client: Arc::new(api),
             dependency_container: container,
             commands: CommandsStore::new(),
@@ -46,11 +51,4 @@ impl App {
         Arc::clone(&self.prod_api_client)
     }
 
-    pub fn with_context<T>(self, context: T) -> Self
-    where
-        T: Send + Sync + 'static,
-    {
-        self.dependency_container.insert(context);
-        self
-    }
 }

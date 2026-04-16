@@ -3,21 +3,10 @@ use qqbot_sdk::ReplyingMessage::Text;
 use qqbot_sdk::{run_application, AppConfig, Context, CredentialConfig, ReplyingMessage};
 use qqbot_sdk_macros::command;
 
-#[tokio::main]
-async fn main() -> std::io::Result<()> {
-    let config = AppConfig {
-        credential: CredentialConfig {
-            app_id: "".to_string(),
-            secret: "".to_string(),
-        },
-        ..Default::default()
-    };
-
-    run_application(config).await
-}
 struct CustomContext {
     pub value: AtomicI16
 }
+
 impl CustomContext {
     fn new() -> Self {
         Self { value: AtomicI16::new(0) }
@@ -27,6 +16,24 @@ impl CustomContext {
         self.value.fetch_add(1, Ordering::SeqCst);
     }
 }
+
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    let config = AppConfig::new()
+        .credential(CredentialConfig {
+            app_id: "".to_string(),
+            secret: "".to_string(),
+        })
+        .bind_addr("0.0.0.0:3000")
+        .webhook_path("/webhook")
+        .prod_url_override("https://sandbox.api.sgroup.qq.com")
+        .with_context(Context::new(CustomContext::new()))
+        ;
+
+    run_application(config).await
+}
+
+
 #[command("/ping")]
 fn ping() -> ReplyingMessage {
     Text(String::from("Pong!"))
@@ -41,7 +48,7 @@ fn asd(msg: Option<Vec<&str>>) -> ReplyingMessage {
 }
 
 #[command("/couting")]
-fn counting(Context(context): Context<CustomContext>) -> ReplyingMessage {
+fn counting(context: Context<CustomContext>) -> ReplyingMessage {
     let v = context.value.load(Ordering::SeqCst);
     context.plus();
     Text(String::from("Current ") + String::from(v.to_string()).as_str())

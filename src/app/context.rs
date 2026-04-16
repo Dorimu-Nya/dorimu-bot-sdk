@@ -1,15 +1,41 @@
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
+use std::ops::Deref;
 use std::sync::{Arc, RwLock};
 
-pub struct Context<T>(pub Arc<T>);
+pub struct Context<T: ?Sized>(Arc<T>);
 
-impl<T> Context<T> {
-    pub fn new(value: T) -> Self
-    where
-        T: Send + Sync,
-    {
-        Context(Arc::new(value))
+impl<T: ?Sized> Clone for Context<T> {
+    fn clone(&self) -> Self {
+        Self(Arc::clone(&self.0))
+    }
+}
+
+impl<T: Any + Send + Sync> Context<T> {
+    pub fn new(value: T) -> Self {
+        Self(Arc::new(value))
+    }
+}
+
+impl<T: ?Sized> Context<T> {
+    pub fn from_arc(value: Arc<T>) -> Self {
+        Self(value)
+    }
+
+    pub fn as_arc(&self) -> Arc<T> {
+        Arc::clone(&self.0)
+    }
+
+    pub fn into_inner(self) -> Arc<T> {
+        self.0
+    }
+}
+
+impl<T: ?Sized> Deref for Context<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        self.0.as_ref()
     }
 }
 
@@ -26,11 +52,11 @@ impl ContextStore {
         }
     }
 
-    pub fn insert<T: 'static + Send + Sync>(&self, value: T) {
+    pub fn insert<T: Any + Send + Sync>(&self, value: T) -> Option<Arc<dyn Any + Send + Sync>> {
         self.dependencies
             .write()
             .unwrap()
-            .insert(TypeId::of::<T>(), Arc::new(value));
+            .insert(TypeId::of::<T>(), Arc::new(value))
     }
 
     pub fn get<T: 'static + Send + Sync>(&self) -> Arc<T> {
@@ -49,5 +75,9 @@ impl ContextStore {
                 std::any::type_name::<T>()
             )
         })
+    }
+
+    pub fn get_context<T: 'static + Send + Sync>(&self) -> Context<T> {
+        Context::from_arc(self.get::<T>())
     }
 }
