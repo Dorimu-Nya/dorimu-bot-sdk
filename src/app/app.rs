@@ -1,12 +1,14 @@
+use super::commands::store::CommandsStore;
 use super::AppConfig;
 use super::ContextStore;
 use crate::openapi::{
     HttpTokenProvider, OpenApi, OpenApiClient, OpenApiConfig, OpenApiPaths, TokenManager,
 };
+use crate::{CommandDef, CredentialConfig};
+use std::any::Any;
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
-use crate::CredentialConfig;
-use super::commands::store::CommandsStore;
 
 #[derive(Clone)]
 pub struct App {
@@ -36,19 +38,37 @@ impl App {
         let container = ContextStore::new();
 
         for register in &config.contexts {
-            register(&container);
+            let o = register(&container);
+            if !config.ignore_checking {
+                if let Some(c) = o {
+                    panic!("Context {:?} 重复传入！", c);
+                }
+            }
         }
+
+        let mut commands = HashMap::new();
+
+        #[cfg(feature = "macros")]
+        inventory::iter::<CommandDef>.into_iter().for_each(|x| {
+            let o = commands.insert(x.prefix, x.handler);
+            if !config.ignore_checking {
+                if let Some(_) = o {
+                    panic!("Command {:?} 重复传入！", x.prefix);
+                }
+            }
+        });
+
+        let commands = CommandsStore::new(commands);
 
         Self {
             credential: config.credential,
             prod_api_client: Arc::new(api),
             dependency_container: container,
-            commands: CommandsStore::new(),
+            commands,
         }
     }
 
     pub fn get_prod_client(&self) -> Arc<OpenApi<HttpTokenProvider>> {
         Arc::clone(&self.prod_api_client)
     }
-
 }

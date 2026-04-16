@@ -1,6 +1,6 @@
-use std::any::Any;
-use qqbot_sdk::Context;
 use super::ContextStore;
+use qqbot_sdk::Context;
+use std::any::Any;
 
 /// 监听配置
 #[derive(Clone)]
@@ -76,7 +76,7 @@ pub struct AppConfig {
     /// 启动时检查，包括上下文检查，指令是否重复等
     pub ignore_checking: bool,
     ///
-    pub contexts: Vec<Box<dyn Fn(&ContextStore) + Send + Sync>>,
+    pub contexts: Vec<Box<dyn Fn(&ContextStore) -> Option<&str> + Send + Sync>>,
 }
 
 impl Default for AppConfig {
@@ -119,7 +119,7 @@ impl AppConfig {
 
     pub fn with_context<T: Any + Send + Sync + 'static>(mut self, context: Context<T>) -> Self {
         self.contexts.push(Box::new(move |store: &ContextStore| {
-            let _ = store.insert_arc(context.as_arc());
+            store.insert_arc(context.as_arc())
         }));
         self
     }

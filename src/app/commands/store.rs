@@ -1,6 +1,6 @@
+use crate::app::commands::defining::{CommandDef, CommandHandleFn};
 use std::collections::HashMap;
 use std::sync::Arc;
-use crate::app::commands::defining::{CommandDef, CommandHandleFn};
 
 #[derive(Clone)]
 pub struct CommandsStore {
@@ -8,15 +8,10 @@ pub struct CommandsStore {
 }
 
 impl CommandsStore {
-    pub fn new() -> CommandsStore {
-        let mut commands = HashMap::new();
-
-        #[cfg(feature = "macros")]
-        inventory::iter::<CommandDef>.into_iter().for_each(|x| {
-            commands.insert(x.prefix, x.handler);
-        });
-
-        CommandsStore { commands: Arc::new(commands) }
+    pub fn new(commands: HashMap<&'static str, CommandHandleFn>) -> CommandsStore {
+        CommandsStore {
+            commands: Arc::new(commands),
+        }
     }
 
     pub fn get(&self, prefix: &str) -> Option<CommandHandleFn> {

@@ -59,11 +59,17 @@ impl ContextStore {
             .insert(TypeId::of::<T>(), Arc::new(value))
     }
 
-    pub fn insert_arc<T: Any + Send + Sync>(&self, value: Arc<T>) -> Option<Arc<dyn Any + Send + Sync>> {
-        self.dependencies
+    pub fn insert_arc<T: Any + Send + Sync>(&self, value: Arc<T>) -> Option<&str> {
+        let o = self
+            .dependencies
             .write()
             .unwrap()
-            .insert(TypeId::of::<T>(), value)
+            .insert(TypeId::of::<T>(), value);
+        if let Some(_) = o {
+            Some(std::any::type_name::<T>())
+        } else {
+            None
+        }
     }
 
     pub fn get<T: 'static + Send + Sync>(&self) -> Arc<T> {
