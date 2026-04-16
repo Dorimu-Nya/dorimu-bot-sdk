@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use std::sync::atomic::{AtomicI16, Ordering};
 use qqbot_sdk::ReplyingMessage::Text;
 use qqbot_sdk::{run_application, AppConfig, Context, CredentialConfig, ReplyingMessage};
