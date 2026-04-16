@@ -1,3 +1,4 @@
+use super::commands::replying::ReplyingMessage;
 use super::App;
 use crate::events::c2c::event_type::C2cEventType;
 use crate::events::common::CommonMessage;
@@ -11,7 +12,6 @@ use crate::events::payload::WebhookPayload;
 use crate::events::validation::{ValidationRequest, ValidationResponse};
 use serde_json::json;
 use tracing::{debug, error, warn};
-use super::commands::replying::ReplyingMessage;
 
 impl App {
     // webhook的第一层的对t字段的处理

@@ -1,8 +1,8 @@
 pub mod app;
-pub mod config;
-pub mod handler;
-pub mod context;
 pub mod commands;
+pub mod config;
+pub mod context;
+pub mod handler;
 
 pub(crate) use self::app::App;
 use self::config::AppConfig;

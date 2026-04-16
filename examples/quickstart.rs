@@ -1,15 +1,17 @@
-use std::sync::atomic::{AtomicI16, Ordering};
 use qqbot_sdk::ReplyingMessage::Text;
 use qqbot_sdk::{run_application, AppConfig, Context, CredentialConfig, ReplyingMessage};
 use qqbot_sdk_macros::command;
+use std::sync::atomic::{AtomicI16, Ordering};
 
 struct CustomContext {
-    pub value: AtomicI16
+    pub value: AtomicI16,
 }
 
 impl CustomContext {
     fn new() -> Self {
-        Self { value: AtomicI16::new(0) }
+        Self {
+            value: AtomicI16::new(0),
+        }
     }
 
     fn plus(&self) {
@@ -27,12 +29,10 @@ async fn main() -> std::io::Result<()> {
         .bind_addr("0.0.0.0:3000")
         .webhook_path("/webhook")
         .prod_url_override("https://sandbox.api.sgroup.qq.com")
-        .with_context(Context::new(CustomContext::new()))
-        ;
+        .with_context(Context::new(CustomContext::new()));
 
     run_application(config).await
 }
-
 
 #[command("/ping")]
 fn ping() -> ReplyingMessage {

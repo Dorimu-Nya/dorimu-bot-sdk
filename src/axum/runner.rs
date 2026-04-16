@@ -1,10 +1,10 @@
 use crate::app::App;
 use crate::events::payload::WebhookPayload;
-use axum::routing::{any};
+use crate::AppConfig;
+use axum::routing::any;
 use axum::{Json, Router};
 use std::sync::Arc;
 use tracing::info;
-use crate::AppConfig;
 
 /// 启动QQBot程序
 ///
@@ -23,7 +23,10 @@ use crate::AppConfig;
 ///     run_application(config).await
 /// }
 /// ```
-pub async fn run_application_with_router(config: AppConfig, base_router: Option<Router>) -> std::io::Result<()> {
+pub async fn run_application_with_router(
+    config: AppConfig,
+    base_router: Option<Router>,
+) -> std::io::Result<()> {
     tracing_subscriber::fmt::init();
 
     let webhook_path = config.listening.webhook_path.clone();
@@ -35,7 +38,9 @@ pub async fn run_application_with_router(config: AppConfig, base_router: Option<
         &webhook_path,
         any({
             let app = Arc::clone(&app);
-            async move |Json(payload): Json<WebhookPayload>| Json(app.webhook_handler(payload).await)
+            async move |Json(payload): Json<WebhookPayload>| {
+                Json(app.webhook_handler(payload).await)
+            }
         }),
     );
 

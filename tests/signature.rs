@@ -4,7 +4,7 @@ use qqbot_sdk::{
     // ReplayProtectionMode, SignatureConfig, SignatureVerifier,
 };
 // use std::time::{Duration,
-                // SystemTime, UNIX_EPOCH
+// SystemTime, UNIX_EPOCH
 // };
 
 // #[test]
@@ -68,7 +68,7 @@ use qqbot_sdk::{
 // }
 #[test]
 fn verify_signature() {
-    let secret= "DG5g3B4j9X2KOErG";
+    let secret = "DG5g3B4j9X2KOErG";
 
     let plain_token = "Arq0D5A61EgUu4OxUvOp";
     let event_ts = 1725442341.to_string();
