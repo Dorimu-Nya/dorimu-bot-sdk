@@ -6,10 +6,12 @@ use axum::{Json, Router};
 use std::sync::Arc;
 use tracing::info;
 
-/// 启动QQBot程序
+/// 启动基于Axum的 QQ Bot 程序
 ///
+/// * `config` - 程序配置
+/// * `base_router` axum的router，当为Some时，将会以其为基础构造axum的路由
 /// example:
-/// ```rust
+/// ```no_run
 /// use qqbot_sdk::{run_application, AppConfig, CredentialConfig};
 /// #[tokio::main]
 /// async fn main() -> std::io::Result<()> {
@@ -49,6 +51,9 @@ pub async fn run_application_with_router(
     axum::serve(listener, router).await
 }
 
+/// 启动基于Axum的 QQ Bot 程序
+///
+/// 将会用默认方式构造axum的router
 pub async fn run_application(config: AppConfig) -> std::io::Result<()> {
     run_application_with_router(config, None).await
 }

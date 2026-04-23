@@ -5,16 +5,19 @@ use crate::openapi::{
     HttpTokenProvider, OpenApi, OpenApiClient, OpenApiConfig, OpenApiPaths, TokenManager,
 };
 use crate::{CommandDef, CredentialConfig};
-use std::any::Any;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
 #[derive(Clone)]
 pub struct App {
+    /// 票据配置
     pub credential: CredentialConfig,
+    /// 生产环境的 api 客户端
     prod_api_client: Arc<OpenApi<HttpTokenProvider>>,
+    /// 依赖容器
     pub dependency_container: ContextStore,
+    /// 命令函数容器
     pub commands: CommandsStore,
 }
 
@@ -68,6 +71,7 @@ impl App {
         }
     }
 
+    /// 获取生产环境的 api 客户端。
     pub fn get_prod_client(&self) -> Arc<OpenApi<HttpTokenProvider>> {
         Arc::clone(&self.prod_api_client)
     }

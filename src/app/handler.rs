@@ -55,7 +55,8 @@ impl App {
             EventType::InteractionEventType(event) => self.matching_interaction_event(event).await,
             EventType::MessageReactionEventType(event) => {
                 self.matching_message_reaction_event(event).await
-            }
+            },
+            &EventType::ForumEventType(_) => {}
         }
     }
 

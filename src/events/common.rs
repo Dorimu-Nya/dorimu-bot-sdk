@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 // 放一些各个事件通用的模型
 
+/// 附件
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Attachment {
     pub content_type: Option<String>,
@@ -12,12 +13,13 @@ pub struct Attachment {
     pub url: Option<String>,
 }
 
+/// 消息来源，用于统一消息抽象
 pub enum MessageFrom {
     C2c,
     Group,
 }
 
-// 对c2c和群组的消息的简单封装抽象
+/// 对c2c和群组的消息的简单封装抽象
 pub trait CommonMessage: Sync {
     fn get_id(&self) -> &String;
     fn get_content(&self) -> &Option<String>;
@@ -30,23 +32,26 @@ pub trait CommonMessage: Sync {
         Self: Sized;
 }
 
-/// CommonMessage 的转换 trait， 用于在处理command宏的时候的转换
+/// CommonMessage 的提取转换 trait， 用于在处理 command宏 的时候的转换
 pub trait FromCommonMessage<'a>: Sized {
     fn from(req: &'a dyn CommonMessage) -> Self;
 }
 
+/// 自身实现
 impl<'a> FromCommonMessage<'a> for &'a dyn CommonMessage {
     fn from(req: &'a dyn CommonMessage) -> Self {
         req
     }
 }
 
+/// 提取附件
 impl<'a> FromCommonMessage<'a> for &'a Option<Vec<Attachment>> {
     fn from(req: &'a dyn CommonMessage) -> Self {
         req.get_attachments()
     }
 }
 
+/// 提取消息
 impl<'a> FromCommonMessage<'a> for Option<Vec<&'a str>> {
     fn from(req: &'a dyn CommonMessage) -> Self {
         match req.get_content() {
@@ -56,6 +61,7 @@ impl<'a> FromCommonMessage<'a> for Option<Vec<&'a str>> {
     }
 }
 
+/// 提取消息
 impl<'a> FromCommonMessage<'a> for &'a Option<String> {
     fn from(req: &'a dyn CommonMessage) -> Self {
         &req.get_content()

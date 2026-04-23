@@ -7,7 +7,7 @@ use std::{fmt::Display, future::Future, pin::Pin};
 // sheip9 (2026/4/9): 不知道标准库里有没有啥东西可以替换他
 pub type BoxDisplay = Box<dyn Display + Send + Sync>;
 
-/// command函数的类型声明
+/// command 函数的类型声明
 pub type CommandHandleFuture<'a> =
     Pin<Box<dyn Future<Output = Result<Option<ReplyingMessage>, BoxDisplay>> + Send + 'a>>;
 
@@ -17,25 +17,33 @@ pub type CommandHandleFuture<'a> =
 pub type CommandHandleFn =
     for<'a> fn(&'a dyn CommonMessage, &'a ContextStore) -> CommandHandleFuture<'a>;
 
-/// 输出的统一转换trait
+/// command 函数的返回值的统一转换trait
 pub trait CommandOutput {
     fn into_output(self) -> Result<Option<ReplyingMessage>, BoxDisplay>;
 }
 
-// 无返回的转换
+/// 将无返回值 `()` 转换为 `CommandOutput`。
+///
+/// 对应的 `into_output` 返回 `Ok(None)`，表示不需要回复消息。
 impl CommandOutput for () {
     fn into_output(self) -> Result<Option<ReplyingMessage>, BoxDisplay> {
         Ok(None)
     }
 }
 
-// ReplyingMessage 对 command方法返回的转换
+/// 将 `ReplyingMessage` 本身作为 `CommandOutput`。
+///
+/// 对应的 `into_output` 将消息包装为 `Some(reply)` 并返回 `Ok(Some(reply))`。
 impl CommandOutput for ReplyingMessage {
     fn into_output(self) -> Result<Option<ReplyingMessage>, BoxDisplay> {
         Ok(Some(self))
     }
 }
 
+/// 将带错误类型的 `Result<ReplyingMessage, E>` 转换为统一输出形式。
+///
+/// - 成功时（`Ok(reply)`）包装为 `Some(reply)` 并返回 `Ok(Some(reply))`。
+/// - 失败时（`Err(e)`）将错误封装为 `BoxDisplay`（即 `Box<dyn Display + Send + Sync>`）并作为 `Err` 返回。
 impl<E> CommandOutput for Result<ReplyingMessage, E>
 where
     E: Display + Send + Sync + 'static,
@@ -45,6 +53,10 @@ where
     }
 }
 
+/// 将带错误类型的 `Result<Option<ReplyingMessage>, E>` 转换为统一输出形式。
+///
+/// - 成功时直接返回内部的 `Option<ReplyingMessage>`，保持 `Some`/`None` 语义不变。
+/// - 失败时将错误转换为 `BoxDisplay` 并作为 `Err` 返回。
 impl<E> CommandOutput for Result<Option<ReplyingMessage>, E>
 where
     E: Display + Send + Sync + 'static,
@@ -54,7 +66,7 @@ where
     }
 }
 
-/// command宏的储存定义
+/// command 宏的储存定义
 #[derive(Debug)]
 pub struct CommandDef {
     pub prefix: &'static str,

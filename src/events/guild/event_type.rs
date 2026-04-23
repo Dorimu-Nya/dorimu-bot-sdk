@@ -1,9 +1,11 @@
 use super::audio::AudioOrLiveChannelMemberEvent;
-use super::forum::OpenForumEvent;
+use super::forum::{ForumEventThread, ForumEventPost, ForumEventReply, ForumEventAuditResult};
+use super::open_forum::OpenForumEvent;
 use super::guild::{ChannelEvent, GuildEvent};
 use super::member::GuildMemberEvent;
 use super::messages::GuildMessages;
 use serde::{Deserialize, Serialize};
+
 /// 频道事件
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "t", content = "d")]
@@ -33,25 +35,25 @@ pub enum GuildEventType {
     #[serde(rename = "MESSAGE_AUDIT_REJECT")]
     MessageAuditReject(),
     /// 公域论坛事件：用户创建主题
-    #[serde(rename = "FORUM_THREAD_CREATE")]
+    #[serde(rename = "OPEN_FORUM_THREAD_CREATE")]
     OpenForumThreadCreate(OpenForumEvent),
     /// 公域论坛事件：用户创建帖子
-    #[serde(rename = "FORUM_POST_CREATE")]
+    #[serde(rename = "OPEN_FORUM_POST_CREATE")]
     OpenForumPostCreate(OpenForumEvent),
     /// 公域论坛事件：用户回复帖子
-    #[serde(rename = "FORUM_REPLY_CREATE")]
+    #[serde(rename = "OPEN_FORUM_REPLY_CREATE")]
     OpenForumReplyCreate(OpenForumEvent),
     /// 公域论坛事件：用户更新主题
-    #[serde(rename = "FORUM_THREAD_UPDATE")]
+    #[serde(rename = "OPEN_FORUM_THREAD_UPDATE")]
     OpenForumThreadUpdate(OpenForumEvent),
     /// 公域论坛事件：用户删除帖子
-    #[serde(rename = "FORUM_POST_DELETE")]
+    #[serde(rename = "OPEN_FORUM_POST_DELETE")]
     OpenForumPostDelete(OpenForumEvent),
     /// 公域论坛事件：用户回复被删除
-    #[serde(rename = "FORUM_REPLY_DELETE")]
+    #[serde(rename = "OPEN_FORUM_REPLY_DELETE")]
     OpenForumReplyDelete(OpenForumEvent),
     /// 公域论坛事件：用户删除主题
-    #[serde(rename = "FORUM_THREAD_DELETE")]
+    #[serde(rename = "OPEN_FORUM_THREAD_DELETE")]
     OpenForumThreadDelete(OpenForumEvent),
     /// 频道创建事件
     #[serde(rename = "GUILD_CREATE")]
@@ -99,4 +101,33 @@ pub enum GuildEventType {
     /// 音视频/直播子频道成员出事件
     #[serde(rename = "AUDIO_OR_LIVE_CHANNEL_MEMBER_EXIT")]
     AudioOrLiveChannelMemberExit(AudioOrLiveChannelMemberEvent),
+}
+// 下面这一部分貌似没有用？webhook回调订阅好像没这些东西
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "t", content = "d")]
+pub enum ForumEventType {
+    /// 论坛事件：用户创建主题
+    #[serde(rename = "FORUM_THREAD_CREATE")]
+    ForumThreadCreate(ForumEventThread),
+    /// 论坛事件：用户更新主题
+    #[serde(rename = "FORUM_THREAD_UPDATE")]
+    ForumThreadUpdate(ForumEventThread),
+    /// 论坛事件：用户删除主题
+    #[serde(rename = "FORUM_THREAD_DELETE")]
+    ForumThreadDelete(ForumEventThread),
+    /// 论坛事件：用户创建帖子
+    #[serde(rename = "FORUM_POST_CREATE")]
+    ForumPostCreate(ForumEventPost),
+    /// 论坛事件：用户删除帖子
+    #[serde(rename = "FORUM_POST_DELETE")]
+    ForumPostDelete(ForumEventPost),
+    /// 论坛事件：用户回复帖子
+    #[serde(rename = "FORUM_REPLY_CREATE")]
+    ForumReplyCreate(ForumEventReply),
+    /// 论坛事件：用户回复被删除
+    #[serde(rename = "FORUM_REPLY_DELETE")]
+    ForumReplyDelete(ForumEventReply),
+    /// 帖子审核事件
+    #[serde(rename = "FORUM_PUBLISH_AUDIT_RESULT")]
+    ForumAuditEvent(ForumEventAuditResult),
 }

@@ -1,7 +1,8 @@
-use crate::app::commands::defining::{CommandDef, CommandHandleFn};
+use crate::app::commands::defining::CommandHandleFn;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+/// command 函数 的存储
 #[derive(Clone)]
 pub struct CommandsStore {
     pub commands: Arc<HashMap<&'static str, CommandHandleFn>>,
