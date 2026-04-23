@@ -11,6 +11,7 @@ use crate::events::payload::DispatchPayload;
 use crate::events::payload::WebhookPayload;
 use crate::events::validation::{ValidationRequest, ValidationResponse};
 use serde_json::json;
+use tracing::info;
 use tracing::{debug, error, warn};
 
 impl App {
@@ -55,7 +56,7 @@ impl App {
             EventType::InteractionEventType(event) => self.matching_interaction_event(event).await,
             EventType::MessageReactionEventType(event) => {
                 self.matching_message_reaction_event(event).await
-            },
+            }
             &EventType::ForumEventType(_) => {}
         }
     }
@@ -75,11 +76,13 @@ impl App {
                         "content": reply,
                     });
 
-                    let _ = self
+                    let send_res = self
                         .get_prod_client()
                         .c2c_messages()
                         .send(&message.author.user_openid, &body)
                         .await;
+
+                    info!("send c2c message result: {:?}", send_res);
                 }
             }
             C2cEventType::FriendAdd(_) => {}
@@ -102,11 +105,13 @@ impl App {
                         "content": reply,
                     });
 
-                    // TODO: openapi部分缺了群组的api
-                    // let _ = self.get_api_client()
-                    //     .
-                    //     .send(&message.author.member_openid, &body)
-                    //     .await;
+                    let send_res = self
+                        .get_prod_client()
+                        .group_messages()
+                        .send(&message.group_openid, &_body)
+                        .await;
+
+                    info!("send group message result: {:?}", send_res);
                 }
             }
             GroupEventType::GroupAddRobot(_) => {}

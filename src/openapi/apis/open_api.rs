@@ -1,7 +1,8 @@
 use super::{
     AnnouncesApi, ApiPermissionsApi, C2cMessagesApi, ChannelPermissionsApi, ChannelsApi, ForumsApi,
-    GuildsApi, InteractionsApi, MembersApi, MessageSettingsApi, MuteApi, OpenApiClient,
-    OpenApiPaths, PinsApi, ReactionsApi, RolesApi, SchedulesApi, TokenProvider, UsersApi,
+    GroupMessagesApi, GuildsApi, InteractionsApi, MembersApi, MessageSettingsApi, MuteApi,
+    OpenApiClient, OpenApiPaths, PinsApi, ReactionsApi, RolesApi, SchedulesApi, TokenProvider,
+    UsersApi,
 };
 
 /// OpenAPI 业务入口，按领域返回各子 API。
@@ -119,6 +120,13 @@ where
 
     pub fn c2c_messages(&self) -> C2cMessagesApi<P> {
         C2cMessagesApi {
+            client: self.client.clone(),
+            paths: self.paths.clone(),
+        }
+    }
+
+    pub fn group_messages(&self) -> GroupMessagesApi<P> {
+        GroupMessagesApi {
             client: self.client.clone(),
             paths: self.paths.clone(),
         }
