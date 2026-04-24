@@ -25,7 +25,8 @@ pub use signature::sign_webhook_validation;
 #[cfg(feature = "app")]
 pub mod app;
 pub use app::commands::defining::{
-    CommandDef, CommandHandleFn, CommandHandleFuture, CommandOutput,
+    CommandDef, CommandHandleFn, CommandHandleFuture, CommandHandler, CommandOutput,
+    DynCommandHandleFn, FromCommandArg,
 };
 pub use app::commands::replying::{
     ReplyingArk, ReplyingArkKv, ReplyingEmbed, ReplyingEmbedField, ReplyingEmbedThumbnail,

@@ -1,3 +1,4 @@
+use super::commands::defining::{wrap_command_handle_fn, DynCommandHandleFn};
 use super::commands::store::CommandsStore;
 use super::AppConfig;
 use super::ContextStore;
@@ -49,11 +50,11 @@ impl App {
             }
         }
 
-        let mut commands = HashMap::new();
+        let mut commands: HashMap<&'static str, DynCommandHandleFn> = HashMap::new();
 
         #[cfg(feature = "macros")]
         inventory::iter::<CommandDef>.into_iter().for_each(|x| {
-            let o = commands.insert(x.prefix, x.handler);
+            let o = commands.insert(x.prefix, wrap_command_handle_fn(x.handler));
             if !config.ignore_checking {
                 if let Some(_) = o {
                     panic!("Command {:?} 重复传入！", x.prefix);
@@ -62,7 +63,7 @@ impl App {
         });
 
         for (prefix, handler) in &config.commands {
-            let o = commands.insert(*prefix, *handler);
+            let o = commands.insert(*prefix, Arc::clone(handler));
             if !config.ignore_checking {
                 if let Some(_) = o {
                     panic!("Command {:?} 重复传入！", prefix);

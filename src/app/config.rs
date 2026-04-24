@@ -1,4 +1,4 @@
-use super::commands::defining::CommandHandleFn;
+use super::commands::defining::{CommandHandler, DynCommandHandleFn};
 use super::ContextStore;
 use qqbot_sdk::Context;
 use std::any::Any;
@@ -79,7 +79,7 @@ pub struct AppConfig {
     ///
     pub contexts: Vec<Box<dyn Fn(&ContextStore) -> Option<&str> + Send + Sync>>,
     /// 手动注册的命令处理函数
-    pub commands: Vec<(&'static str, CommandHandleFn)>,
+    pub commands: Vec<(&'static str, DynCommandHandleFn)>,
 }
 
 impl Default for AppConfig {
@@ -128,8 +128,15 @@ impl AppConfig {
         self
     }
 
-    pub fn with_command(mut self, prefix: &'static str, handler: CommandHandleFn) -> Self {
-        self.commands.push((prefix, handler));
+    /// 手动注册命令处理函数。
+    ///
+    /// 与 `#[command]` 不同，手动注册建议使用可拥有所有权的参数类型
+    /// （如 `Option<String>`、`Option<Vec<String>>`）或 `Context<T>`。
+    pub fn with_command<H, Args, Kind>(mut self, prefix: &'static str, handler: H) -> Self
+    where
+        H: CommandHandler<Args, Kind>,
+    {
+        self.commands.push((prefix, handler.into_dyn()));
         self
     }
 }
