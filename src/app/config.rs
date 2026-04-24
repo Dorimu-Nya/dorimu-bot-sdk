@@ -1,3 +1,4 @@
+use super::commands::defining::CommandHandleFn;
 use super::ContextStore;
 use qqbot_sdk::Context;
 use std::any::Any;
@@ -77,6 +78,8 @@ pub struct AppConfig {
     pub ignore_checking: bool,
     ///
     pub contexts: Vec<Box<dyn Fn(&ContextStore) -> Option<&str> + Send + Sync>>,
+    /// 手动注册的命令处理函数
+    pub commands: Vec<(&'static str, CommandHandleFn)>,
 }
 
 impl Default for AppConfig {
@@ -88,6 +91,7 @@ impl Default for AppConfig {
             api_overrides: Default::default(),
             ignore_checking: false,
             contexts: vec![],
+            commands: vec![],
         }
     }
 }
@@ -121,6 +125,11 @@ impl AppConfig {
         self.contexts.push(Box::new(move |store: &ContextStore| {
             store.insert_arc(context.as_arc())
         }));
+        self
+    }
+
+    pub fn with_command(mut self, prefix: &'static str, handler: CommandHandleFn) -> Self {
+        self.commands.push((prefix, handler));
         self
     }
 }

@@ -61,6 +61,15 @@ impl App {
             }
         });
 
+        for (prefix, handler) in &config.commands {
+            let o = commands.insert(*prefix, *handler);
+            if !config.ignore_checking {
+                if let Some(_) = o {
+                    panic!("Command {:?} 重复传入！", prefix);
+                }
+            }
+        }
+
         let commands = CommandsStore::new(commands);
 
         Self {
