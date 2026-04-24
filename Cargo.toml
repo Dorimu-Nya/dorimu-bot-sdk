@@ -18,7 +18,7 @@ full = ["app", "macros", "axum-runner"]
 
 [dependencies]
 async-trait = "0.1"
-axum = { version = "0.7", features = ["macros"], optional = true }
+axum = { version = "0.8", features = ["macros"], optional = true }
 base64 = "0.22"
 ed25519-dalek = "2"
 hex = "0.4"
