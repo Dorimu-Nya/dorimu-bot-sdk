@@ -77,7 +77,7 @@ impl App {
                     });
 
                     let send_res = self
-                        .get_prod_client()
+                        .get_api_client()
                         .c2c_messages()
                         .send(&message.author.user_openid, &body)
                         .await;

@@ -81,6 +81,12 @@ impl App {
         }
     }
 
+    /// 获取 api 客户端。
+    pub fn get_api_client(&self) -> Arc<OpenApi<HttpTokenProvider>> {
+        //TODO: 沙盒分配策略
+        return self.get_prod_client();
+    }
+
     /// 获取生产环境的 api 客户端。
     pub fn get_prod_client(&self) -> Arc<OpenApi<HttpTokenProvider>> {
         Arc::clone(&self.prod_api_client)
