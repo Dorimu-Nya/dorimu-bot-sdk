@@ -13,7 +13,7 @@ git submodule add https://github.com/Dorimu-Nya/dorimu-bot-sdk qqbot_sdk
 随后，在 `Cargo.toml` 的 `dependencies` 区块 添加
 
 ```toml
-qqbot_sdk = { path = "./sdk" }
+qqbot_sdk = { path = "./qqbot_sdk" }
 ```
 
 ## 消息指令
