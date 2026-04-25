@@ -2,6 +2,20 @@
 
 一个正在开发中的对接支持 QQ机器人 官方API Webhook 框架，目标是一键开箱，快速使用。
 
+## 开始
+
+照常创建一个空的Rust项目，然后使用 git submodule 添加本仓库
+
+```sh
+git submodule add https://github.com/Dorimu-Nya/dorimu-bot-sdk qqbot_sdk
+```
+
+随后，在 `Cargo.toml` 的 `dependencies` 区块 添加
+
+```toml
+qqbot_sdk = { path = "./sdk" }
+```
+
 ## 消息指令
 
 ### command
