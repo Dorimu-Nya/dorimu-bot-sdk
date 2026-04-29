@@ -31,9 +31,13 @@ impl HelloCmd {
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    let earth_hi = HelloCmd { location: "Earth".to_string() };
-    let moon_hi = HelloCmd { location: "Moon".to_string() };
-    
+    let earth_hi = HelloCmd {
+        location: "Earth".to_string(),
+    };
+    let moon_hi = HelloCmd {
+        location: "Moon".to_string(),
+    };
+
     let config = AppConfig::new()
         .credential(CredentialConfig {
             app_id: "".to_string(),
@@ -44,8 +48,7 @@ async fn main() -> std::io::Result<()> {
         .prod_url_override("https://sandbox.api.sgroup.qq.com")
         .with_context(Context::new(CustomContext::new()))
         .with_command("/hi1", move || earth_hi.say_hi())
-        .with_command("/hi2", move || moon_hi.say_hi())
-    ;
+        .with_command("/hi2", move || moon_hi.say_hi());
 
     run_application(config).await
 }

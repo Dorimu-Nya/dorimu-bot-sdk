@@ -11,7 +11,7 @@ pub struct GroupAuthor {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 /// 群 @ 消息
-/// 
+///
 /// 触发场景：群内用户 @ 机器人发送消息
 pub struct GroupAtMessage {
     /// 平台方消息ID，可以用于被动消息发送

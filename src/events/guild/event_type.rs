@@ -1,9 +1,9 @@
 use super::audio::AudioOrLiveChannelMemberEvent;
-use super::forum::{ForumEventThread, ForumEventPost, ForumEventReply, ForumEventAuditResult};
-use super::open_forum::OpenForumEvent;
+use super::forum::{ForumEventAuditResult, ForumEventPost, ForumEventReply, ForumEventThread};
 use super::guild::{ChannelEvent, GuildEvent};
 use super::member::GuildMemberEvent;
 use super::messages::GuildMessages;
+use super::open_forum::OpenForumEvent;
 use serde::{Deserialize, Serialize};
 
 /// 频道事件

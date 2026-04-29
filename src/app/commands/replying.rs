@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Markdown 消息
-/// 
+///
 /// https://bot.q.qq.com/wiki/develop/api-v2/server-inter/message/type/markdown.html
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReplyingMarkdown {
@@ -26,7 +26,7 @@ pub struct ReplyingMarkdownParam {
 }
 
 /// ARK 消息
-/// 
+///
 /// https://bot.q.qq.com/wiki/develop/api-v2/server-inter/message/type/ark.html
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReplyingArk {
@@ -49,7 +49,7 @@ pub struct ReplyingArkKv {
 }
 
 ///  Embed 消息
-/// 
+///
 /// https://bot.q.qq.com/wiki/develop/api-v2/server-inter/message/type/embed.html
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReplyingEmbed {

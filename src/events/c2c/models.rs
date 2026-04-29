@@ -22,7 +22,7 @@ pub struct C2cMessageScene {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 /// 单聊消息
-/// 
+///
 /// 触发场景：用户在单聊发送消息给机器人
 pub struct C2cMessage {
     /// 平台方消息ID，可以用于被动消息发送
