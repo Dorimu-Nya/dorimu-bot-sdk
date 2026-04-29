@@ -6,6 +6,7 @@ use std::any::Any;
 
 /// 监听配置
 #[derive(Clone, Deserialize)]
+#[serde(default)]
 pub struct ListeningConfig {
     /// actix监听地址, 如0.0.0.0:3000
     pub bind_addr: String,
@@ -24,6 +25,7 @@ impl Default for ListeningConfig {
 
 /// qqbot官网下发的票据
 #[derive(Clone, Deserialize)]
+#[serde(default)]
 pub struct CredentialConfig {
     pub app_id: String,
     pub secret: String,
@@ -51,6 +53,7 @@ impl Default for SandboxConfig {
 
 /// qqbot api地址覆盖配置
 #[derive(Clone, Deserialize)]
+#[serde(default)]
 pub struct QQApiOverrides {
     pub prod_url_override: Option<String>,
     pub sandbox_url_override: Option<String>,
@@ -67,6 +70,7 @@ impl Default for QQApiOverrides {
 
 /// 应用配置
 #[derive(Deserialize)]
+#[serde(default)]
 pub struct AppConfig {
     /// 监听配置
     pub listening: ListeningConfig,
