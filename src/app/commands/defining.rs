@@ -59,6 +59,8 @@ where
 pub struct SyncCommandHandlerKind;
 /// 异步命令函数的适配标记。
 pub struct AsyncCommandHandlerKind;
+/// 借用消息参数的同步命令函数适配标记。
+pub struct BorrowedMessageSyncCommandHandlerKind;
 
 /// 将普通函数适配为统一命令处理函数的 trait。
 pub trait CommandHandler<Args, Kind>: Send + Sync + 'static {
@@ -93,6 +95,19 @@ macro_rules! impl_command_handler {
                         let result = fut.await;
                         CommandOutput::into_output(result)
                     })
+                })
+            }
+        }
+
+        impl<F, R> CommandHandler<(&dyn CommonMessage,), BorrowedMessageSyncCommandHandlerKind> for F
+        where
+            F: for<'a> Fn(&'a dyn CommonMessage) -> R + Send + Sync + 'static,
+            R: CommandOutput + Send + 'static,
+        {
+            fn into_dyn(self) -> DynCommandHandleFn {
+                Arc::new(move |message, _store| {
+                    let result = (self)(message);
+                    Box::pin(async move { CommandOutput::into_output(result) })
                 })
             }
         }
