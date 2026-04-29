@@ -1,10 +1,11 @@
 use super::commands::defining::{CommandHandler, DynCommandHandleFn};
 use super::ContextStore;
 use qqbot_sdk::Context;
+use serde::Deserialize;
 use std::any::Any;
 
 /// 监听配置
-#[derive(Clone)]
+#[derive(Clone, Deserialize)]
 pub struct ListeningConfig {
     /// actix监听地址, 如0.0.0.0:3000
     pub bind_addr: String,
@@ -22,7 +23,7 @@ impl Default for ListeningConfig {
 }
 
 /// qqbot官网下发的票据
-#[derive(Clone)]
+#[derive(Clone, Deserialize)]
 pub struct CredentialConfig {
     pub app_id: String,
     pub secret: String,
@@ -49,7 +50,7 @@ impl Default for SandboxConfig {
 }
 
 /// qqbot api地址覆盖配置
-#[derive(Clone)]
+#[derive(Clone, Deserialize)]
 pub struct QQApiOverrides {
     pub prod_url_override: Option<String>,
     pub sandbox_url_override: Option<String>,
@@ -65,20 +66,24 @@ impl Default for QQApiOverrides {
 }
 
 /// 应用配置
+#[derive(Deserialize)]
 pub struct AppConfig {
     /// 监听配置
     pub listening: ListeningConfig,
     /// qqbot票据配置
     pub credential: CredentialConfig,
     /// 沙箱配置
+    #[serde(skip)]
     pub sandbox_config: SandboxConfig,
     /// api地址覆写
     pub api_overrides: QQApiOverrides,
     /// 启动时检查，包括上下文检查，指令是否重复等
     pub ignore_checking: bool,
-    ///
+    /// 上下文存储
+    #[serde(skip)]
     pub contexts: Vec<Box<dyn Fn(&ContextStore) -> Option<&str> + Send + Sync>>,
     /// 手动注册的命令处理函数
+    #[serde(skip)]
     pub commands: Vec<(&'static str, DynCommandHandleFn)>,
 }
 
