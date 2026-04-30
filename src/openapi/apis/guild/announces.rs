@@ -1,23 +1,28 @@
 use super::{
-    render_path, require_path, Method, OpenApiClient, OpenApiPaths, Result, TokenProvider, Value,
+    render_path, require_path, Method, OpenApiClient, OpenApiPaths, Result, TokenProvider,
 };
+use crate::openapi::models::{Announces, CreateAnnouncesRequest};
 
 /// 公告相关接口。
 #[derive(Clone)]
 pub struct AnnouncesApi<P> {
-    pub(super) client: OpenApiClient<P>,
-    pub(super) paths: OpenApiPaths,
+    pub(in crate::openapi::apis) client: OpenApiClient<P>,
+    pub(in crate::openapi::apis) paths: OpenApiPaths,
 }
 
 impl<P> AnnouncesApi<P>
 where
     P: TokenProvider,
 {
-    pub async fn create(&self, guild_id: &str, body: &Value) -> Result<(http::StatusCode, Value)> {
+    pub async fn create(
+        &self,
+        guild_id: &str,
+        body: &CreateAnnouncesRequest,
+    ) -> Result<(http::StatusCode, Announces)> {
         let template = require_path(&self.paths.announces_create, "announces_create")?;
         let path = render_path(&template, &[("guild_id", guild_id)])?;
         self.client
-            .request_value(Method::POST, &path, Some(body))
+            .request_t_with(Method::POST, &path, Some(body))
             .await
     }
 

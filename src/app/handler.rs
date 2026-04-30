@@ -10,7 +10,6 @@ use crate::events::message_reaction::event_type::MessageReactionEventType;
 use crate::events::payload::DispatchPayload;
 use crate::events::payload::WebhookPayload;
 use crate::events::validation::{ValidationRequest, ValidationResponse};
-use serde_json::json;
 use tracing::info;
 use tracing::{debug, error, warn};
 
@@ -68,18 +67,13 @@ impl App {
             C2cEventType::C2cMessageCreate(message) => {
                 let reply = self.handle_messaging(message, payload).await;
                 if let Some(reply) = reply {
-                    // todo: 手写对象不靠谱，还是要重构下openapi
-                    let body = json!({
-                        "msg_id": message.id,
-                        "msg_seq": message.msg_seq.unwrap_or(1),
-                        "msg_type": reply.to_msg_type(),
-                        "content": reply,
-                    });
+                    let body = reply
+                        .to_request(Some(message.id.clone()), Some(message.msg_seq.unwrap_or(1)));
 
                     let send_res = self
                         .get_api_client()
                         .c2c_messages()
-                        .send(&message.author.user_openid, &body)
+                        .send_typed(&message.author.user_openid, &body)
                         .await;
 
                     info!("send c2c message result: {:?}", send_res);
@@ -98,17 +92,13 @@ impl App {
             GroupEventType::GroupAtMessageCreate(message) => {
                 let reply = self.handle_messaging(message, payload).await;
                 if let Some(reply) = reply {
-                    let _body = json!({
-                        "msg_id": message.id,
-                        "msg_seq": message.msg_seq.unwrap_or(1),
-                        "msg_type": reply.to_msg_type(),
-                        "content": reply,
-                    });
+                    let body = reply
+                        .to_request(Some(message.id.clone()), Some(message.msg_seq.unwrap_or(1)));
 
                     let send_res = self
                         .get_prod_client()
                         .group_messages()
-                        .send(&message.group_openid, &_body)
+                        .send_typed(&message.group_openid, &body)
                         .await;
 
                     info!("send group message result: {:?}", send_res);

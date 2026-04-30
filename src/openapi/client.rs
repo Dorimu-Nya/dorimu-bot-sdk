@@ -1,6 +1,7 @@
 use crate::{Error, HttpClient, Result};
 use reqwest::{Method, Response};
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 use serde_json::Value;
 
 use super::{
@@ -55,6 +56,30 @@ where
         self.http.send_with_retry(builder).await
     }
 
+    /// 发送请求（泛型请求体）并返回原始响应。
+    pub async fn request_json_with<B: Serialize + ?Sized>(
+        &self,
+        method: Method,
+        path: &str,
+        body: Option<&B>,
+    ) -> Result<Response> {
+        let token = self.token_manager.get_token().await?;
+        let url = join_url(&self.config.base_url, path);
+        let mut builder = self.http.client().request(method, url);
+
+        let auth_value = if let Some(prefix) = &self.config.auth.prefix {
+            format!("{} {}", prefix, token)
+        } else {
+            token
+        };
+
+        builder = builder.header(self.config.auth.header_name.clone(), auth_value);
+        if let Some(body) = body {
+            builder = builder.json(body);
+        }
+        self.http.send_with_retry(builder).await
+    }
+
     /// 发送请求并将响应解析为 `serde_json::Value`。
     pub async fn request_value(
         &self,
@@ -79,6 +104,24 @@ where
         let status = resp.status();
         let parsed = resp.json().await.map_err(Error::Http)?;
         Ok((status, parsed))
+    }
+
+    /// 发送请求（泛型请求体）并按目标类型反序列化。
+    pub async fn request_t_with<T: DeserializeOwned, B: Serialize + ?Sized>(
+        &self,
+        method: Method,
+        path: &str,
+        body: Option<&B>,
+    ) -> Result<(http::StatusCode, T)> {
+        let resp = self.request_json_with(method, path, body).await?;
+        let status = resp.status();
+        let parsed = resp.json().await.map_err(Error::Http)?;
+        Ok((status, parsed))
+    }
+
+    /// 发送 GET 请求并按目标类型反序列化。
+    pub async fn get_t<T: DeserializeOwned>(&self, path: &str) -> Result<(http::StatusCode, T)> {
+        self.request_t::<T>(Method::GET, path, None).await
     }
 
     /// 发送 GET 请求并返回 JSON。

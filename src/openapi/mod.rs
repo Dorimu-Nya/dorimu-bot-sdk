@@ -3,6 +3,7 @@ mod client;
 mod config;
 pub mod error;
 pub mod http;
+pub mod models;
 mod token;
 mod utils;
 
@@ -13,4 +14,5 @@ pub use apis::{
 };
 pub use client::OpenApiClient;
 pub use config::{AuthConfig, OpenApiConfig, OpenApiPaths};
+pub use models::*;
 pub use token::{HttpTokenProvider, TokenManager, TokenProvider};

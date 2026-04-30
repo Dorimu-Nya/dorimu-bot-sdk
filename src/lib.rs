@@ -11,6 +11,7 @@ pub use crate::events::payload::DispatchPayload;
 pub mod openapi;
 pub use openapi::error::{Error, Result};
 pub use openapi::http::{HttpClient, RetryPolicy};
+pub use openapi::models;
 pub use openapi::{
     AnnouncesApi, ApiPermissionsApi, AuthConfig, C2cMessagesApi, ChannelPermissionsApi,
     ChannelsApi, ForumsApi, GuildsApi, HttpTokenProvider, InteractionsApi, MembersApi,
@@ -28,10 +29,7 @@ pub use app::commands::defining::{
     CommandDef, CommandHandleFn, CommandHandleFuture, CommandHandler, CommandOutput,
     DynCommandHandleFn, FromCommandArg,
 };
-pub use app::commands::replying::{
-    ReplyingArk, ReplyingArkKv, ReplyingEmbed, ReplyingEmbedField, ReplyingEmbedThumbnail,
-    ReplyingMarkdown, ReplyingMarkdownParam, ReplyingMedia, ReplyingMessage, ReplyingType,
-};
+pub use app::commands::replying::{ReplyingMessage, ReplyingType};
 pub use app::config::{AppConfig, CredentialConfig, ListeningConfig, SandboxConfig};
 
 #[cfg(feature = "macros")]
