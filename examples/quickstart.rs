@@ -1,8 +1,11 @@
+use qqbot_sdk::models::message::{
+    Action, ActionType, Keyboard, KeyboardButton, KeyboardContent, KeyboardRow, MessageMarkdown,
+    Permission, PermissionType, RenderData,
+};
 use qqbot_sdk::ReplyingMessage::Text;
 use qqbot_sdk::{run_application, AppConfig, Context, CredentialConfig, ReplyingMessage};
 use qqbot_sdk_macros::command;
 use std::sync::atomic::{AtomicI16, Ordering};
-
 struct CustomContext {
     pub value: AtomicI16,
 }
@@ -71,4 +74,88 @@ fn counting(context: Context<CustomContext>) -> ReplyingMessage {
     let v = context.value.load(Ordering::SeqCst);
     context.plus();
     Text(String::from("Current ") + String::from(v.to_string()).as_str())
+}
+
+#[command("/markdown")]
+fn markdown() -> ReplyingMessage {
+    fn create_default_action() -> Action {
+        Action {
+            action_type: ActionType::Callback,
+            permission: Permission {
+                permission_type: PermissionType::AdminOnly,
+                specify_user_ids: None,
+                specify_role_ids: Some(vec!["1".to_string(), "2".to_string(), "3".to_string()]),
+            },
+            data: "data".to_string(),
+            reply: None,
+            enter: None,
+            anchor: None,
+            click_limit: Some(10),
+            at_bot_show_channel_list: Some(true),
+            unsupport_tips: "兼容文本".to_string(),
+        }
+    }
+
+    ReplyingMessage::Markdown(MessageMarkdown {
+        content: Some(
+            "
+            # 一号标题
+            ## 二号标题
+            正文
+
+            **加粗**
+            __下划线加粗__
+            _斜体_
+            *星号斜体*
+            ***加粗斜体***
+            ~~删除线~~
+
+            欢迎来到：[🔗腾讯网](https://www.qq.com)
+            文档可以访问<https://doc.qq.com>
+
+            "
+            .to_string(),
+        ),
+        custom_template_id: None,
+        params: None,
+        keyboard: Some(Keyboard {
+            content: KeyboardContent {
+                rows: vec![
+                    KeyboardRow {
+                        buttons: vec![
+                            KeyboardButton {
+                                id: Some("1".to_string()),
+                                render_data: RenderData {
+                                    label: "⬅️上一页".to_string(),
+                                    visited_label: "⬅️上一页".to_string(),
+                                    style: None,
+                                },
+                                action: create_default_action(),
+                            },
+                            KeyboardButton {
+                                id: Some("2".to_string()),
+                                render_data: RenderData {
+                                    label: "➡️下一页".to_string(),
+                                    visited_label: "➡️下一页".to_string(),
+                                    style: None,
+                                },
+                                action: create_default_action(),
+                            },
+                        ],
+                    },
+                    KeyboardRow {
+                        buttons: vec![KeyboardButton {
+                            id: Some("3".to_string()),
+                            render_data: RenderData {
+                                label: "📅 打卡（5）".to_string(),
+                                visited_label: "📅 打卡（5）".to_string(),
+                                style: None,
+                            },
+                            action: create_default_action(),
+                        }],
+                    },
+                ],
+            },
+        }),
+    })
 }

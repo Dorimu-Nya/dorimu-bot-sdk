@@ -1,4 +1,4 @@
-use crate::models::message::MessageMarkdown;
+use crate::models::message::{MessageMarkdown};
 use crate::openapi::models::message::MessageType;
 use crate::openapi::models::message::{MessageArk, MessageEmbed, MessageMedia, SendMessageRequest};
 use serde::{Deserialize, Serialize};
@@ -60,6 +60,10 @@ impl ReplyingMessage {
             },
             Self::Markdown(markdown) => SendMessageRequest {
                 markdown: Some(markdown.clone()),
+                keyboard: match &markdown.keyboard {
+                    Some(keyboard) => Some(keyboard.clone()),
+                    None => None,
+                },
                 ..basic
             },
             Self::Ark(ark) => SendMessageRequest {

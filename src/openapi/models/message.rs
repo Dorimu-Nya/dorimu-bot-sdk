@@ -38,7 +38,7 @@ pub struct SendMessageRequest {
     pub markdown: Option<MessageMarkdown>,
     /// [Keyboard](../interaction/msg-btn.md#数据结构与协议)对象。
     #[serde(default)]
-    pub keyboard: Option<JsonObject>,
+    pub keyboard: Option<Keyboard>,
     /// [Ark](../type/ark.md#数据结构与协议)对象。
     #[serde(default)]
     pub ark: Option<MessageArk>,
@@ -100,6 +100,9 @@ pub struct MessageMarkdown {
     pub custom_template_id: Option<String>,
     /// 模板参数（可选）。
     pub params: Option<Vec<MessageMarkdownParam>>,
+    /// 键盘（可选）。
+    #[serde(skip)]
+    pub keyboard: Option<Keyboard>,
 }
 
 /// Markdown 模板参数项，表示一个键对应多个值。
@@ -112,6 +115,146 @@ pub struct MessageMarkdownParam {
     pub key: String,
     /// 参数值列表。
     pub values: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Keyboard {
+    pub content: KeyboardContent,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KeyboardContent {
+    pub rows: Vec<KeyboardRow>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KeyboardRow {
+    pub buttons: Vec<KeyboardButton>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KeyboardButton {
+    /// 按钮 ID：在一个 keyboard 消息内设置唯一
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+
+    pub render_data: RenderData,
+
+    pub action: Action,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RenderData {
+    /// 按钮上的文字
+    pub label: String,
+
+    /// 点击后按钮上的文字
+    pub visited_label: String,
+
+    /// 按钮样式
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub style: Option<ButtonStyle>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Action {
+    /// 按钮类型
+    #[serde(rename = "type")]
+    pub action_type: ActionType,
+
+    /// 权限配置
+    pub permission: Permission,
+
+    /// 操作相关的数据
+    pub data: String,
+
+    /// 指令按钮可用，指令是否带引用回复本消息，默认 false
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reply: Option<bool>,
+
+    /// 指令按钮可用，点击按钮后直接自动发送 data，仅单聊可用，默认 false
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub enter: Option<bool>,
+
+    /// 指令按钮可用，设置后会忽略 action.enter 配置
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub anchor: Option<ActionAnchor>,
+
+    /// 已弃用：可操作点击的次数，默认不限
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub click_limit: Option<i32>,
+
+    /// 已弃用：指令按钮可用，弹出子频道选择器，默认 false
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub at_bot_show_channel_list: Option<bool>,
+
+    /// 客户端不支持本 action 的时候，弹出的 toast 文案
+    pub unsupport_tips: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Permission {
+    /// 权限类型
+    #[serde(rename = "type")]
+    pub permission_type: PermissionType,
+
+    /// 有权限的用户 id 的列表
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub specify_user_ids: Option<Vec<String>>,
+
+    /// 有权限的身份组 id 的列表，仅频道可用
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub specify_role_ids: Option<Vec<String>>,
+}
+
+/// 按钮样式
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize_repr, Deserialize_repr)]
+#[repr(i32)]
+pub enum ButtonStyle {
+    /// 灰色线框
+    GrayOutline = 0,
+
+    /// 蓝色线框
+    BlueOutline = 1,
+}
+
+/// 按钮行为类型
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize_repr, Deserialize_repr)]
+#[repr(i32)]
+pub enum ActionType {
+    /// 跳转按钮：http 或小程序客户端识别 scheme
+    Jump = 0,
+
+    /// 回调按钮：回调后台接口，data 传给后台
+    Callback = 1,
+
+    /// 指令按钮：自动在输入框插入 @bot data
+    Command = 2,
+}
+
+/// 权限类型
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize_repr, Deserialize_repr)]
+#[repr(i32)]
+pub enum PermissionType {
+    /// 指定用户可操作
+    SpecifyUser = 0,
+
+    /// 仅管理者可操作
+    AdminOnly = 1,
+
+    /// 所有人可操作
+    Everyone = 2,
+
+    /// 指定身份组可操作，仅频道可用
+    SpecifyRole = 3,
+}
+
+/// 指令按钮锚点行为
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize_repr, Deserialize_repr)]
+#[repr(i32)]
+pub enum ActionAnchor {
+    /// 点击按钮自动唤起手 Q 选图器
+    OpenImagePicker = 1,
 }
 
 /// ARK 消息
