@@ -35,11 +35,17 @@ impl App {
             openapi_config.base_url = url.clone();
         }
         let client = OpenApiClient::new(token_manager, openapi_config);
-        let api = OpenApi::new(client, OpenApiPaths::official_defaults());
+        let api = Arc::new(OpenApi::new(client, OpenApiPaths::official_defaults()));
         // api 客户端初始化 end
 
         // 初始化ioc
         let container = ContextStore::new();
+        let o = container.insert_arc(Arc::clone(&api));
+        if !config.ignore_checking {
+            if let Some(c) = o {
+                panic!("Context {:?} 重复传入！", c);
+            }
+        }
 
         for register in &config.contexts {
             let o = register(&container);
@@ -75,7 +81,7 @@ impl App {
 
         Self {
             credential: config.credential,
-            prod_api_client: Arc::new(api),
+            prod_api_client: api,
             dependency_container: container,
             commands,
         }
