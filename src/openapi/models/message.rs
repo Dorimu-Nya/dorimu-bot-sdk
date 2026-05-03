@@ -84,9 +84,24 @@ impl Default for SendMessageRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SendMessageResponse {
     /// 消息唯一ID。
-    pub id: String,
+    pub id: Option<String>,
     /// 发送时间。
-    pub timestamp: i64,
+    pub timestamp: Option<String>,
+    /// 错误码，接口返回错误时可能存在，例如：40034028。
+    #[serde(default)]
+    pub code: Option<i64>,
+    /// 错误码，接口返回错误时可能存在，例如：40034028。
+    #[serde(default)]
+    pub err_code: Option<i64>,
+    /// 错误信息，接口返回错误时可能存在。
+    #[serde(default)]
+    pub message: Option<String>,
+    /// 链路追踪 ID，接口返回错误时可能存在。
+    #[serde(default)]
+    pub trace_id: Option<String>,
+    /// 额外字段，避免接口新增或返回未声明字段时丢失，便于通过 Debug/日志输出排查。
+    #[serde(flatten, default)]
+    pub extra: BTreeMap<String, Value>,
 }
 
 /// Markdown 消息
