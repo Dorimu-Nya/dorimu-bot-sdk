@@ -14,12 +14,13 @@ mod open_api;
 mod user;
 
 pub use channel::{
-    ChannelPermissionsApi, ChannelsApi, ForumsApi, PinsApi, ReactionsApi, SchedulesApi,
+    AudioApi, ChannelMessagesApi, ChannelPermissionsApi, ChannelsApi, ForumsApi, PinsApi,
+    ReactionsApi, SchedulesApi,
 };
 pub use guild::{
     AnnouncesApi, ApiPermissionsApi, GuildsApi, MembersApi, MessageSettingsApi, MuteApi, RolesApi,
 };
 pub use interaction::InteractionsApi;
-pub use message::{C2cMessagesApi, GroupMessagesApi};
+pub use message::{C2cMessagesApi, DmsMessagesApi, GroupMessagesApi, MediaApi};
 pub use open_api::OpenApi;
 pub use user::UsersApi;

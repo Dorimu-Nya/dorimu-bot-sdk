@@ -3,13 +3,20 @@ use reqwest::{Client, RequestBuilder, Response};
 use std::time::Duration;
 use tokio::time::sleep;
 
+/// HTTP 请求重试策略。
 #[derive(Debug, Clone)]
 pub struct RetryPolicy {
+    /// 最大重试次数，不包含首次请求。
     pub max_retries: usize,
+    /// 指数退避的基础延迟。
     pub base_delay: Duration,
+    /// 指数退避的最大延迟。
     pub max_delay: Duration,
+    /// 需要触发重试的 HTTP 状态码列表。
     pub retry_statuses: Vec<u16>,
+    /// 请求超时时是否重试。
     pub retry_on_timeout: bool,
+    /// 连接失败时是否重试。
     pub retry_on_connect: bool,
 }
 
@@ -26,6 +33,7 @@ impl Default for RetryPolicy {
     }
 }
 
+/// 带重试能力的 HTTP 客户端包装器。
 #[derive(Clone)]
 pub struct HttpClient {
     client: Client,
@@ -33,18 +41,22 @@ pub struct HttpClient {
 }
 
 impl HttpClient {
+    /// 创建 HTTP 客户端包装器。
     pub fn new(client: Client, retry: RetryPolicy) -> Self {
         Self { client, retry }
     }
 
+    /// 获取底层 `reqwest` 客户端。
     pub fn client(&self) -> &Client {
         &self.client
     }
 
+    /// 获取当前重试策略。
     pub fn retry(&self) -> &RetryPolicy {
         &self.retry
     }
 
+    /// 发送请求，并按照重试策略处理可重试错误。
     pub async fn send_with_retry(&self, mut builder: RequestBuilder) -> Result<Response> {
         let mut attempt = 0usize;
 

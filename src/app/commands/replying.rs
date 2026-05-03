@@ -1,4 +1,4 @@
-use crate::models::message::{MessageMarkdown};
+use crate::models::message::MessageMarkdown;
 use crate::openapi::models::message::MessageType;
 use crate::openapi::models::message::{MessageArk, MessageEmbed, MessageMedia, SendMessageRequest};
 use serde::{Deserialize, Serialize};

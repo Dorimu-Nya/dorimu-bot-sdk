@@ -10,7 +10,9 @@ use crate::openapi::models::{
 /// 身份组（Role）相关接口。
 #[derive(Clone)]
 pub struct RolesApi<P> {
+    /// 共享的 OpenAPI HTTP 客户端。
     pub(in crate::openapi::apis) client: OpenApiClient<P>,
+    /// 身份组接口使用的路径模板。
     pub(in crate::openapi::apis) paths: OpenApiPaths,
 }
 
@@ -18,12 +20,14 @@ impl<P> RolesApi<P>
 where
     P: TokenProvider,
 {
+    /// 获取指定频道的身份组列表。
     pub async fn list(&self, guild_id: &str) -> Result<(http::StatusCode, GuildRolesResponse)> {
         let template = require_path(&self.paths.role_list, "role_list")?;
         let path = render_path(&template, &[("guild_id", guild_id)])?;
         self.client.get_t(&path).await
     }
 
+    /// 获取指定身份组下的成员列表。
     pub async fn list_members(
         &self,
         guild_id: &str,
@@ -43,6 +47,7 @@ where
         self.client.get_t(&path).await
     }
 
+    /// 按查询参数获取指定身份组下的成员列表。
     pub async fn list_members_by_query(
         &self,
         guild_id: &str,
@@ -58,6 +63,7 @@ where
         .await
     }
 
+    /// 创建频道身份组。
     pub async fn create(
         &self,
         guild_id: &str,
@@ -70,6 +76,7 @@ where
             .await
     }
 
+    /// 修改频道身份组。
     pub async fn update(
         &self,
         guild_id: &str,
@@ -83,6 +90,7 @@ where
             .await
     }
 
+    /// 删除频道身份组。
     pub async fn delete(&self, guild_id: &str, role_id: &str) -> Result<http::StatusCode> {
         let template = require_path(&self.paths.role_delete, "role_delete")?;
         let path = render_path(&template, &[("guild_id", guild_id), ("role_id", role_id)])?;
@@ -93,6 +101,7 @@ where
         Ok(resp.status())
     }
 
+    /// 为频道成员添加身份组。
     pub async fn add_member(
         &self,
         guild_id: &str,
@@ -102,6 +111,7 @@ where
         self.add_member_with(guild_id, user_id, role_id, None).await
     }
 
+    /// 为频道成员添加身份组，并可指定子频道对象请求体。
     pub async fn add_member_with(
         &self,
         guild_id: &str,
@@ -129,6 +139,7 @@ where
         Ok(resp.status())
     }
 
+    /// 移除频道成员的身份组。
     pub async fn remove_member(
         &self,
         guild_id: &str,
@@ -139,6 +150,7 @@ where
             .await
     }
 
+    /// 移除频道成员的身份组，并可指定子频道对象请求体。
     pub async fn remove_member_with(
         &self,
         guild_id: &str,

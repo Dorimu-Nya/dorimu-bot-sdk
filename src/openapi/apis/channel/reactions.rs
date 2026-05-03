@@ -7,7 +7,9 @@ use crate::openapi::models::{ReactionUsersQuery, ReactionUsersResponse};
 /// 表情回应相关接口。
 #[derive(Clone)]
 pub struct ReactionsApi<P> {
+    /// 共享的 OpenAPI HTTP 客户端。
     pub(in crate::openapi::apis) client: OpenApiClient<P>,
+    /// 表情回应接口使用的路径模板。
     pub(in crate::openapi::apis) paths: OpenApiPaths,
 }
 
@@ -15,6 +17,7 @@ impl<P> ReactionsApi<P>
 where
     P: TokenProvider,
 {
+    /// 为指定消息添加表情回应。
     pub async fn add(
         &self,
         channel_id: &str,
@@ -36,6 +39,7 @@ where
         Ok(resp.status())
     }
 
+    /// 删除指定消息上的表情回应。
     pub async fn delete(
         &self,
         channel_id: &str,
@@ -60,6 +64,7 @@ where
         Ok(resp.status())
     }
 
+    /// 获取对指定消息添加某表情回应的用户列表。
     pub async fn users(
         &self,
         channel_id: &str,
@@ -89,6 +94,7 @@ where
         self.client.get_t(&path).await
     }
 
+    /// 按查询参数获取表情回应用户列表。
     pub async fn users_with(
         &self,
         channel_id: &str,

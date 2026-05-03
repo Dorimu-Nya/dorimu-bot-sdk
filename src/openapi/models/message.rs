@@ -1,8 +1,10 @@
 use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{Map, Value};
 use serde_repr::{Deserialize_repr, Serialize_repr};
+
+use super::{Member, User};
 
 /// 消息类型：0 是文本，2 是 markdown，3 ark，4 embed，7 media 富媒体。
 #[derive(Debug, Clone, Copy, Serialize_repr, Deserialize_repr)]
@@ -24,6 +26,84 @@ pub enum MessageType {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(transparent)]
 pub struct JsonObject(pub BTreeMap<String, Value>);
+
+/// 消息引用对象。
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct MessageReference {
+    /// 被引用的消息 ID。
+    #[serde(default)]
+    pub message_id: Option<String>,
+    /// OpenAPI 返回的未显式建模字段。
+    #[serde(flatten)]
+    pub extra: BTreeMap<String, Value>,
+}
+
+/// 消息附件对象。
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct MessageAttachment {
+    /// 附件 ID。
+    #[serde(default)]
+    pub id: Option<String>,
+    /// 文件名。
+    #[serde(default)]
+    pub filename: Option<String>,
+    /// 文件大小。
+    #[serde(default)]
+    pub size: Option<u64>,
+    /// 附件 URL。
+    #[serde(default)]
+    pub url: Option<String>,
+    /// OpenAPI 返回的未显式建模字段。
+    #[serde(flatten)]
+    pub extra: BTreeMap<String, Value>,
+}
+
+/// 频道消息对象。
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct Message {
+    /// 消息 ID。
+    #[serde(default)]
+    pub id: Option<String>,
+    /// 子频道 ID。
+    #[serde(default)]
+    pub channel_id: Option<String>,
+    /// 频道 ID。
+    #[serde(default)]
+    pub guild_id: Option<String>,
+    /// 消息内容。
+    #[serde(default)]
+    pub content: Option<String>,
+    /// 消息发送时间。
+    #[serde(default)]
+    pub timestamp: Option<String>,
+    /// 消息编辑时间。
+    #[serde(default)]
+    pub edited_timestamp: Option<String>,
+    /// 消息创建者。
+    #[serde(default)]
+    pub author: Option<User>,
+    /// 成员信息。
+    #[serde(default)]
+    pub member: Option<Member>,
+    /// 消息引用。
+    #[serde(default)]
+    pub message_reference: Option<MessageReference>,
+    /// 被提及用户列表。
+    #[serde(default)]
+    pub mentions: Vec<User>,
+    /// 附件列表。
+    #[serde(default)]
+    pub attachments: Vec<MessageAttachment>,
+    /// 消息序号。
+    #[serde(default)]
+    pub seq: Option<u64>,
+    /// 子频道内消息序号。
+    #[serde(default)]
+    pub seq_in_channel: Option<String>,
+    /// OpenAPI 返回的未显式建模字段。
+    #[serde(flatten)]
+    pub extra: BTreeMap<String, Value>,
+}
 
 /// POST /v2/users/{openid}/messages 请求参数。
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -132,32 +212,42 @@ pub struct MessageMarkdownParam {
     pub values: Vec<String>,
 }
 
+/// 消息按钮键盘对象。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Keyboard {
+    /// 键盘内容。
     pub content: KeyboardContent,
 }
 
+/// 消息按钮键盘内容。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KeyboardContent {
+    /// 键盘行列表。
     pub rows: Vec<KeyboardRow>,
 }
 
+/// 消息按钮键盘中的一行。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KeyboardRow {
+    /// 当前行中的按钮列表。
     pub buttons: Vec<KeyboardButton>,
 }
 
+/// 消息按钮对象。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KeyboardButton {
     /// 按钮 ID：在一个 keyboard 消息内设置唯一
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 
+    /// 按钮渲染数据。
     pub render_data: RenderData,
 
+    /// 按钮行为配置。
     pub action: Action,
 }
 
+/// 消息按钮渲染数据。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RenderData {
     /// 按钮上的文字
@@ -171,6 +261,7 @@ pub struct RenderData {
     pub style: Option<ButtonStyle>,
 }
 
+/// 消息按钮行为配置。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Action {
     /// 按钮类型
@@ -207,6 +298,7 @@ pub struct Action {
     pub unsupport_tips: String,
 }
 
+/// 消息按钮权限配置。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Permission {
     /// 权限类型
@@ -337,4 +429,142 @@ pub struct MessageMedia {
     pub srv_send_msg: bool,
     /// 可选的文件数据（例如 base64 字符串）。
     pub file_data: Option<String>,
+}
+
+/// PATCH /channels/{channel_id}/messages/{message_id} 请求参数。
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct UpdateMessageRequest {
+    /// 要回复的消息 ID。
+    #[serde(default)]
+    pub msg_id: Option<String>,
+    /// 要回复的事件 ID。
+    #[serde(default)]
+    pub event_id: Option<String>,
+    /// Markdown 消息对象。
+    #[serde(default)]
+    pub markdown: Option<MessageMarkdown>,
+    /// Keyboard 消息对象。
+    #[serde(default)]
+    pub keyboard: Option<Keyboard>,
+}
+
+/// DELETE 消息接口查询参数。
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct DeleteMessageOptions {
+    /// 是否隐藏提示小灰条，true 为隐藏，false 为显示，默认 false。
+    #[serde(default)]
+    pub hidetip: Option<bool>,
+}
+
+/// POST /v2/users/{openid}/files 请求参数。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UploadMediaRequest {
+    /// 媒体类型：1 图片，2 视频，3 语音，4 文件（暂不开放）。
+    pub file_type: u8,
+    /// 需要发送媒体资源的 URL。
+    pub url: String,
+    /// 设置 true 会直接发送消息到目标端，且会占用主动消息频次。
+    pub srv_send_msg: bool,
+    /// 暂未支持的文件数据字段，透传给 OpenAPI。
+    #[serde(default)]
+    pub file_data: Option<String>,
+}
+
+/// POST /v2/users/{openid}/files 返回参数。
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct UploadMediaResponse {
+    /// 文件 ID。
+    #[serde(default)]
+    pub file_uuid: Option<String>,
+    /// 文件信息，用于发消息接口的 media 字段使用。
+    #[serde(default)]
+    pub file_info: Option<String>,
+    /// 有效期，剩余多少秒到期，0 表示可长期使用。
+    #[serde(default)]
+    pub ttl: Option<u64>,
+    /// 当 srv_send_msg 设置为 true 时返回的消息唯一 ID。
+    #[serde(default)]
+    pub id: Option<String>,
+    /// OpenAPI 返回的未显式建模字段。
+    #[serde(flatten)]
+    pub extra: Map<String, Value>,
+}
+
+/// POST /users/@me/dms 请求参数。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CreateDmsRequest {
+    /// 接收者 id。
+    pub recipient_id: String,
+    /// 源频道 id。
+    pub source_guild_id: String,
+}
+
+/// DMS 对象。
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct Dms {
+    /// 私信频道对应 guild_id。
+    #[serde(default)]
+    pub guild_id: Option<String>,
+    /// 私信子频道 ID。
+    #[serde(default)]
+    pub channel_id: Option<String>,
+    /// 创建时间。
+    #[serde(default)]
+    pub create_time: Option<String>,
+    /// OpenAPI 返回的未显式建模字段。
+    #[serde(flatten)]
+    pub extra: Map<String, Value>,
+}
+
+/// POST /channels/{channel_id}/audio 请求参数。
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct AudioControlRequest {
+    /// 音频地址。
+    #[serde(default)]
+    pub audio_url: Option<String>,
+    /// 状态文本。
+    #[serde(default)]
+    pub text: Option<String>,
+    /// 音频控制状态。
+    #[serde(default)]
+    pub status: Option<i32>,
+}
+
+/// POST /v2/groups/{group_openid}/members 查询参数。
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct GroupMembersQuery {
+    /// 每页限制数量 1-500。
+    #[serde(default)]
+    pub limit: Option<u32>,
+    /// 首页输入 0，后续填入返回参数的 next_index。
+    #[serde(default)]
+    pub start_index: Option<u32>,
+}
+
+/// 群成员 openid 对象。
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct GroupMember {
+    /// 群成员 openid。
+    #[serde(default)]
+    pub member_openid: Option<String>,
+    /// 加群时间戳。
+    #[serde(default)]
+    pub join_timestamp: Option<u64>,
+    /// OpenAPI 返回的未显式建模字段。
+    #[serde(flatten)]
+    pub extra: Map<String, Value>,
+}
+
+/// POST /v2/groups/{group_openid}/members 返回参数。
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct GroupMembersResponse {
+    /// openid 列表。
+    #[serde(default)]
+    pub members: Vec<GroupMember>,
+    /// 下一页的拉取标记位。
+    #[serde(default)]
+    pub next_index: Option<u32>,
+    /// OpenAPI 返回的未显式建模字段。
+    #[serde(flatten)]
+    pub extra: Map<String, Value>,
 }

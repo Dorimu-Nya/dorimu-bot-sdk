@@ -37,7 +37,7 @@ async fn main() -> std::io::Result<()> {
     if std::env::var("RUST_LOG").is_err() {
         std::env::set_var("RUST_LOG", "debug");
     }
-    
+
     let earth_hi = HelloCmd {
         location: "Earth".to_string(),
     };

@@ -105,6 +105,7 @@ pub struct RecommendChannel {
     /// 推荐语（文档模型未展开，此字段按常见结构定义）。
     #[serde(default)]
     pub introduce: Option<String>,
+    /// OpenAPI 返回的未显式建模字段。
     #[serde(flatten)]
     pub extra: Map<String, Value>,
 }

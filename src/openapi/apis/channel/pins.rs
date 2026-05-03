@@ -6,7 +6,9 @@ use crate::openapi::models::PinsMessage;
 /// 精华消息（Pins）相关接口。
 #[derive(Clone)]
 pub struct PinsApi<P> {
+    /// 共享的 OpenAPI HTTP 客户端。
     pub(in crate::openapi::apis) client: OpenApiClient<P>,
+    /// 精华消息接口使用的路径模板。
     pub(in crate::openapi::apis) paths: OpenApiPaths,
 }
 
@@ -14,12 +16,14 @@ impl<P> PinsApi<P>
 where
     P: TokenProvider,
 {
+    /// 获取指定子频道的精华消息列表。
     pub async fn list(&self, channel_id: &str) -> Result<(http::StatusCode, PinsMessage)> {
         let template = require_path(&self.paths.pins_list, "pins_list")?;
         let path = render_path(&template, &[("channel_id", channel_id)])?;
         self.client.get_t(&path).await
     }
 
+    /// 将指定消息添加为精华消息。
     pub async fn add(
         &self,
         channel_id: &str,
@@ -33,6 +37,7 @@ where
         self.client.request_t(Method::PUT, &path, None).await
     }
 
+    /// 删除指定精华消息。
     pub async fn delete(&self, channel_id: &str, message_id: &str) -> Result<http::StatusCode> {
         let template = require_path(&self.paths.pins_delete, "pins_delete")?;
         let path = render_path(

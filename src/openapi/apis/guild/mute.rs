@@ -8,7 +8,9 @@ use crate::openapi::models::{
 /// 禁言相关接口。
 #[derive(Clone)]
 pub struct MuteApi<P> {
+    /// 共享的 OpenAPI HTTP 客户端。
     pub(in crate::openapi::apis) client: OpenApiClient<P>,
+    /// 禁言接口使用的路径模板。
     pub(in crate::openapi::apis) paths: OpenApiPaths,
 }
 
@@ -16,6 +18,7 @@ impl<P> MuteApi<P>
 where
     P: TokenProvider,
 {
+    /// 设置指定频道的全员禁言状态。
     pub async fn mute_all(
         &self,
         guild_id: &str,
@@ -30,6 +33,7 @@ where
         Ok(resp.status())
     }
 
+    /// 设置指定频道成员的禁言状态。
     pub async fn mute_user(
         &self,
         guild_id: &str,
@@ -45,6 +49,7 @@ where
         Ok(resp.status())
     }
 
+    /// 批量设置指定频道成员的禁言状态。
     pub async fn mute_multi_members(
         &self,
         guild_id: &str,

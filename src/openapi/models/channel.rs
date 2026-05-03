@@ -4,6 +4,56 @@ use serde_repr::{Deserialize_repr, Serialize_repr};
 
 use super::{Member, User};
 
+/// POST /guilds/{guild_id}/channels 请求参数。
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct CreateChannelRequest {
+    /// 子频道名称。
+    pub name: String,
+    /// 子频道类型。
+    #[serde(rename = "type")]
+    pub kind: i32,
+    /// 子频道子类型。
+    #[serde(default)]
+    pub sub_type: Option<i32>,
+    /// 子频道排序。
+    pub position: i32,
+    /// 子频道所属分组 ID。
+    #[serde(default)]
+    pub parent_id: Option<String>,
+    /// 子频道私密类型。
+    #[serde(default)]
+    pub private_type: Option<i32>,
+    /// 子频道私密类型成员 ID。
+    #[serde(default)]
+    pub private_user_ids: Vec<String>,
+    /// 子频道发言权限。
+    #[serde(default)]
+    pub speak_permission: Option<i32>,
+    /// 应用类型子频道应用 AppID。
+    #[serde(default)]
+    pub application_id: Option<String>,
+}
+
+/// PATCH /channels/{channel_id} 请求参数。
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct UpdateChannelRequest {
+    /// 子频道名。
+    #[serde(default)]
+    pub name: Option<String>,
+    /// 排序。
+    #[serde(default)]
+    pub position: Option<i32>,
+    /// 分组 id。
+    #[serde(default)]
+    pub parent_id: Option<String>,
+    /// 子频道私密类型。
+    #[serde(default)]
+    pub private_type: Option<i32>,
+    /// 子频道发言权限。
+    #[serde(default)]
+    pub speak_permission: Option<i32>,
+}
+
 /// GET /channels/{channel_id}/online_nums 返回参数。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OnlineNumsResponse {
@@ -119,6 +169,7 @@ pub struct ReactionUsersResponse {
     /// 下一页分页标记（文档未给出结构，按常见返回定义）。
     #[serde(default)]
     pub cookie: Option<String>,
+    /// OpenAPI 返回的未显式建模字段。
     #[serde(flatten)]
     pub extra: Map<String, Value>,
 }
@@ -172,6 +223,7 @@ pub struct Thread {
     /// 发表时间（文档模型未展开，此字段按常见结构定义）。
     #[serde(default)]
     pub date_time: Option<String>,
+    /// OpenAPI 返回的未显式建模字段。
     #[serde(flatten)]
     pub extra: Map<String, Value>,
 }

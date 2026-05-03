@@ -8,7 +8,9 @@ use crate::openapi::models::{
 /// 论坛帖子相关接口。
 #[derive(Clone)]
 pub struct ForumsApi<P> {
+    /// 共享的 OpenAPI HTTP 客户端。
     pub(in crate::openapi::apis) client: OpenApiClient<P>,
+    /// 论坛帖子接口使用的路径模板。
     pub(in crate::openapi::apis) paths: OpenApiPaths,
 }
 
@@ -16,6 +18,7 @@ impl<P> ForumsApi<P>
 where
     P: TokenProvider,
 {
+    /// 获取指定子频道的帖子列表。
     pub async fn list_threads(
         &self,
         channel_id: &str,
@@ -25,6 +28,7 @@ where
         self.client.get_t(&path).await
     }
 
+    /// 获取指定帖子详情。
     pub async fn get_thread(
         &self,
         channel_id: &str,
@@ -38,6 +42,7 @@ where
         self.client.get_t(&path).await
     }
 
+    /// 在指定子频道创建帖子。
     pub async fn create_thread(
         &self,
         channel_id: &str,
@@ -50,6 +55,7 @@ where
             .await
     }
 
+    /// 删除指定帖子。
     pub async fn delete_thread(
         &self,
         channel_id: &str,

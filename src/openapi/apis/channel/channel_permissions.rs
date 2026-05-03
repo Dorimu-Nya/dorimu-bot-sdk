@@ -6,7 +6,9 @@ use crate::openapi::models::{ChannelPermissions, ModifyChannelPermissionsRequest
 /// 子频道权限相关接口。
 #[derive(Clone)]
 pub struct ChannelPermissionsApi<P> {
+    /// 共享的 OpenAPI HTTP 客户端。
     pub(in crate::openapi::apis) client: OpenApiClient<P>,
+    /// 子频道权限接口使用的路径模板。
     pub(in crate::openapi::apis) paths: OpenApiPaths,
 }
 
@@ -14,6 +16,7 @@ impl<P> ChannelPermissionsApi<P>
 where
     P: TokenProvider,
 {
+    /// 获取指定用户在子频道内的权限。
     pub async fn get_user(
         &self,
         channel_id: &str,
@@ -30,6 +33,7 @@ where
         self.client.get_t(&path).await
     }
 
+    /// 修改指定用户在子频道内的权限。
     pub async fn set_user(
         &self,
         channel_id: &str,
@@ -51,6 +55,7 @@ where
         Ok(resp.status())
     }
 
+    /// 获取指定身份组在子频道内的权限。
     pub async fn get_role(
         &self,
         channel_id: &str,
@@ -67,6 +72,7 @@ where
         self.client.get_t(&path).await
     }
 
+    /// 修改指定身份组在子频道内的权限。
     pub async fn set_role(
         &self,
         channel_id: &str,

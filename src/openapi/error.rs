@@ -2,6 +2,7 @@ use thiserror::Error;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
+/// SDK 统一错误类型。
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("http error: {0}")]

@@ -7,7 +7,9 @@ use crate::openapi::models::{Schedule, SchedulesQuery, UpsertScheduleRequest};
 /// 日程相关接口。
 #[derive(Clone)]
 pub struct SchedulesApi<P> {
+    /// 共享的 OpenAPI HTTP 客户端。
     pub(in crate::openapi::apis) client: OpenApiClient<P>,
+    /// 日程接口使用的路径模板。
     pub(in crate::openapi::apis) paths: OpenApiPaths,
 }
 
@@ -15,10 +17,12 @@ impl<P> SchedulesApi<P>
 where
     P: TokenProvider,
 {
+    /// 获取指定子频道的日程列表。
     pub async fn list(&self, channel_id: &str) -> Result<(http::StatusCode, Vec<Schedule>)> {
         self.list_with(channel_id, None).await
     }
 
+    /// 按起始时间获取指定子频道的日程列表。
     pub async fn list_with(
         &self,
         channel_id: &str,
@@ -30,6 +34,7 @@ where
         self.client.get_t(&path).await
     }
 
+    /// 按查询参数获取指定子频道的日程列表。
     pub async fn list_by_query(
         &self,
         channel_id: &str,
@@ -38,6 +43,7 @@ where
         self.list_with(channel_id, query.since).await
     }
 
+    /// 获取指定日程详情。
     pub async fn get(
         &self,
         channel_id: &str,
@@ -51,6 +57,7 @@ where
         self.client.get_t(&path).await
     }
 
+    /// 在指定子频道创建日程。
     pub async fn create(
         &self,
         channel_id: &str,
@@ -63,6 +70,7 @@ where
             .await
     }
 
+    /// 修改指定日程。
     pub async fn update(
         &self,
         channel_id: &str,
@@ -79,6 +87,7 @@ where
             .await
     }
 
+    /// 删除指定日程。
     pub async fn delete(&self, channel_id: &str, schedule_id: &str) -> Result<http::StatusCode> {
         let template = require_path(&self.paths.schedule_delete, "schedule_delete")?;
         let path = render_path(

@@ -7,7 +7,9 @@ use crate::Error;
 /// 交互事件回包接口。
 #[derive(Clone)]
 pub struct InteractionsApi<P> {
+    /// 共享的 OpenAPI HTTP 客户端。
     pub(in crate::openapi::apis) client: OpenApiClient<P>,
+    /// 互动回调接口使用的路径模板。
     pub(in crate::openapi::apis) paths: OpenApiPaths,
 }
 
@@ -15,6 +17,7 @@ impl<P> InteractionsApi<P>
 where
     P: TokenProvider,
 {
+    /// 使用整数回包码确认指定互动事件。
     pub async fn ack(&self, interaction_id: &str, code: i64) -> Result<http::StatusCode> {
         let code = match code {
             0 => InteractionAckCode::Success,
@@ -33,6 +36,7 @@ where
         self.ack_with(interaction_id, &body).await
     }
 
+    /// 使用强类型请求体确认指定互动事件。
     pub async fn ack_with(
         &self,
         interaction_id: &str,

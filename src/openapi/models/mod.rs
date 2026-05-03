@@ -6,10 +6,10 @@ pub mod message;
 mod user;
 
 pub use channel::{
-    ChannelPermissions, CreateThreadRequest, CreateThreadResponse, ModifyChannelPermissionsRequest,
-    OnlineNumsResponse, PinsMessage, ReactionUsersQuery, ReactionUsersResponse, Schedule,
-    ScheduleInput, SchedulesQuery, Thread, ThreadDetailResponse, ThreadFormat, ThreadsListResponse,
-    UpsertScheduleRequest,
+    ChannelPermissions, CreateChannelRequest, CreateThreadRequest, CreateThreadResponse,
+    ModifyChannelPermissionsRequest, OnlineNumsResponse, PinsMessage, ReactionUsersQuery,
+    ReactionUsersResponse, Schedule, ScheduleInput, SchedulesQuery, Thread, ThreadDetailResponse,
+    ThreadFormat, ThreadsListResponse, UpdateChannelRequest, UpsertScheduleRequest,
 };
 pub use common::{Channel, Guild, Member, Role, User};
 pub use guild::{
@@ -22,6 +22,9 @@ pub use guild::{
 };
 pub use interaction::{InteractionAckCode, InteractionAckRequest};
 pub use message::{
-    JsonObject, MessageType, SendMessageRequest, SendMessageResponse,
+    AudioControlRequest, CreateDmsRequest, DeleteMessageOptions, Dms, GroupMember,
+    GroupMembersQuery, GroupMembersResponse, JsonObject, Message, MessageAttachment,
+    MessageReference, MessageType, SendMessageRequest, SendMessageResponse, UpdateMessageRequest,
+    UploadMediaRequest, UploadMediaResponse,
 };
 pub use user::UserGuildsQuery;
